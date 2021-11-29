@@ -9,7 +9,7 @@ function App() {
   const columnConfig: ColumnConfig[] = [
     {
       field: "index",
-      width: 50,
+      width: 80,
     },
     {
       field: "guid",

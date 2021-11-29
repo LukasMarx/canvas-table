@@ -18,6 +18,7 @@ export class BaseGrid {
   private _selectionIndizes: Record<number, boolean> = {};
   private _selectionData: any[] = [];
   private _expandedKeys: Record<string, boolean> = {};
+  private _expandedIndizes: Record<number, boolean> = {};
   private _calculatedData: { level: number; data: any }[] = [];
 
   private _blockRedraw = false;
@@ -74,15 +75,26 @@ export class BaseGrid {
 
   caculateData(allData: any[], level = 0) {
     const result: any[] = [];
+    const indizes: Record<number, boolean> = {};
+    let index = 0;
     for (const data of allData || []) {
       result.push({ level, data });
       const key = this.buildSelectionKeys(data);
       if (this.expandedKeys[key] && data.chidlren) {
-        const subResult = this.caculateData(data.chidlren, level + 1);
+        indizes[index] = true;
+        const { rows: subResult, openIndizes } = this.caculateData(
+          data.chidlren,
+          level + 1
+        );
+        Object.keys(openIndizes).forEach(
+          (i) => (indizes[(index + i) as any] = true)
+        );
         subResult.forEach((res) => result.push(res));
+        index += Object.keys(data.chidlren).length;
       }
+      index++;
     }
-    return result;
+    return { rows: result, openIndizes: indizes };
   }
 
   public get calculatedData(): { level: number; data: any }[] {
@@ -90,6 +102,13 @@ export class BaseGrid {
   }
   private set calculatedData(value: { level: number; data: any }[]) {
     this._calculatedData = value;
+  }
+
+  public get expandedIndizes(): Record<number, boolean> {
+    return this._expandedIndizes;
+  }
+  private set expandedIndizes(value: Record<number, boolean>) {
+    this._expandedIndizes = value;
   }
 
   public get buildSelectionKeys(): (row: any) => any {
@@ -206,7 +225,9 @@ export class BaseGrid {
 
   set data(data: any[] | undefined) {
     this._data = data;
-    this.calculatedData = this.caculateData(this.data || []);
+    const { openIndizes, rows } = this.caculateData(this.data || []);
+    this.expandedIndizes = openIndizes;
+    this.calculatedData = rows;
     this.calculateSelection();
     this.redraw();
   }
@@ -229,7 +250,9 @@ export class BaseGrid {
   }
   public set expandedKeys(value: Record<string, boolean>) {
     this._expandedKeys = value;
-    this.calculatedData = this.caculateData(this.data || []);
+    const { openIndizes, rows } = this.caculateData(this.data || []);
+    this.expandedIndizes = openIndizes;
+    this.calculatedData = rows;
     this.calculateSelection();
     this.redraw();
   }

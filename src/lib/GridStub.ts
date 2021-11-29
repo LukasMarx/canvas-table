@@ -92,7 +92,7 @@ export class GridStub {
       left: this.left,
       top: this.top,
     });
-  }, 8);
+  }, 16);
 
   public get left(): number {
     return this._left;

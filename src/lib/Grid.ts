@@ -49,6 +49,20 @@ export class Grid extends BaseGrid {
     const columnConfig =
       cellIndex !== undefined ? this.columnConfig?.[cellIndex] : undefined;
 
+    const key = this.buildSelectionKeys(rowData);
+
+    // Check if clicked on TreeControl
+    if (rowData.chidlren && options.left > 4 && options.left < 22) {
+      if (this.expandedKeys[key]) {
+        const newKeys = { ...this.expandedKeys };
+        delete newKeys[key];
+        this.expandedKeys = newKeys;
+      } else {
+        this.expandedKeys = { ...this.expandedKeys, [key]: true };
+      }
+      return;
+    }
+
     const args: RowClickEvent = {
       column: columnConfig!,
       columnIndex: cellIndex!,
@@ -56,13 +70,12 @@ export class Grid extends BaseGrid {
       rowIndex: rowIndex,
     };
     this.fireEvent("rowClick", args);
-    const key = this.buildSelectionKeys(rowData);
+
     if (options.shiftKey) {
       const newSelection = { ...this.selectionKeys };
       delete newSelection[key];
       this.selectionKeys = newSelection;
     } else {
-      this.expandedKeys = { ...this.expandedKeys, [key]: true };
       this.selectionKeys = { ...this.selectionKeys, [key]: true };
     }
   }
@@ -86,8 +99,9 @@ export class Grid extends BaseGrid {
     this.clearAll();
 
     const firstIndex = Math.floor(this.scrollTop / this.rowHeight);
-    const lastIndex = firstIndex + this.height / this.rowHeight;
-    const activeData = this.calculatedData?.slice(firstIndex, lastIndex + 2);
+    const lastIndex =
+      firstIndex + Math.floor(this.height / ratio / this.rowHeight);
+    const activeData = this.calculatedData?.slice(firstIndex, lastIndex + 1);
 
     activeData?.forEach((datapoint, index) => {
       this.drawRow(firstIndex + index, index);
@@ -115,22 +129,58 @@ export class Grid extends BaseGrid {
     this.ctx.lineTo(this.width, y);
     this.ctx.closePath();
     this.ctx.stroke();
-    let x = 0;
-    this.columnConfig?.forEach((column, index) => {
-      this.ctx.beginPath();
-      this.ctx.font = "normal 14px sans-serif";
-      this.drawCell(
-        this.calculatedData?.[absoluteIndex]?.data?.[column.field],
-        y,
-        x +
-          20 * (this.calculatedData?.[absoluteIndex].level || 0) -
-          this.scrollLeft,
-        this.columnWidths[index]
+
+    const row = this.calculatedData[absoluteIndex].data;
+    const hasChildren = row.chidlren && row.chidlren.length > 0;
+
+    let x =
+      20 * (this.calculatedData?.[absoluteIndex].level || 0) - this.scrollLeft;
+
+    if (hasChildren) {
+      this.drawTreeControl(
+        this.expandedIndizes[absoluteIndex],
+        8 - this.scrollLeft,
+        y
       );
+    }
+
+    this.columnConfig?.forEach((column, index) => {
+      const ratioWidth = this.width / ratio;
+      if (
+        (x >= 0 && x <= ratioWidth) ||
+        (x + this.columnWidths[index] >= 0 &&
+          x + this.columnWidths[index] <= ratioWidth)
+      ) {
+        this.ctx.beginPath();
+        this.ctx.font = "normal 14px sans-serif";
+        this.drawCell(
+          this.calculatedData?.[absoluteIndex]?.data?.[column.field],
+          y,
+          index === 0 ? x + 26 : x,
+          this.columnWidths[index]
+        );
+        this.ctx.closePath();
+      }
       x += this.columnWidths[index];
-      this.ctx.closePath();
     });
     this.ctx.stroke();
+  }
+
+  drawTreeControl(open: boolean, x: number, rowTop: any) {
+    this.ctx.beginPath();
+    const center = Math.floor(rowTop + this.rowHeight / 2);
+    if (open) {
+      this.ctx.moveTo(x, center);
+      this.ctx.lineTo(x + 10, center);
+      this.ctx.lineTo(x + 5, center + 5);
+    } else {
+      this.ctx.moveTo(x, center - 5);
+      this.ctx.lineTo(x + 5, center);
+      this.ctx.lineTo(x, center + 5);
+    }
+
+    this.ctx.fill();
+    this.ctx.closePath();
   }
 
   drawCell(value: any, top: any, x: number, width: number, rowHeight?: number) {
