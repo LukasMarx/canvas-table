@@ -2,7 +2,7 @@ import { ColumnConfig } from "./types/ColumnConfig";
 import { debounce, throttle } from "./utils/Util";
 import Worker from "./Worker?worker";
 
-const worker = new Worker();
+const workers = [new Worker(), new Worker()];
 
 export class GridStub {
   public readonly rowHeight = 32;
@@ -13,21 +13,27 @@ export class GridStub {
   private _left: number = 0;
   private _top: number = 0;
 
-  constructor(canvas: HTMLCanvasElement) {
-    const offscreen = (canvas as any).transferControlToOffscreen();
+  public nextWorker = 0;
 
-    worker.addEventListener("message", (message) => {
-      if (message.data === "ready") {
-        worker.postMessage(
-          {
-            type: "init",
-            canvas: offscreen,
-            data: this.data,
-            columns: this.columnConfig,
-          },
-          [offscreen as any]
-        );
-      }
+  constructor(canvases: HTMLCanvasElement[]) {
+    const offscreens = canvases.map((canvas) =>
+      (canvas as any).transferControlToOffscreen()
+    );
+
+    workers.forEach((worker, index) => {
+      worker.addEventListener("message", (message) => {
+        if (message.data === "ready") {
+          worker.postMessage(
+            {
+              type: "init",
+              canvas: offscreens[index],
+              data: this.data,
+              columns: this.columnConfig,
+            },
+            [offscreens[index] as any]
+          );
+        }
+      });
     });
   }
 
@@ -36,7 +42,11 @@ export class GridStub {
   }
   public set columnConfig(value: ColumnConfig[] | undefined) {
     this._columnConfig = value;
-    worker.postMessage({
+    workers[0].postMessage({
+      type: "setColumns",
+      data: value,
+    });
+    workers[1].postMessage({
       type: "setColumns",
       data: value,
     });
@@ -44,7 +54,11 @@ export class GridStub {
 
   set data(data: any[] | undefined) {
     this._data = data;
-    worker.postMessage({
+    workers[0].postMessage({
+      type: "setData",
+      data: data,
+    });
+    workers[1].postMessage({
       type: "setData",
       data: data,
     });
@@ -55,7 +69,12 @@ export class GridStub {
   }
 
   private sendDimensions = debounce(() => {
-    worker.postMessage({
+    workers[0].postMessage({
+      type: "setDimensions",
+      width: this.width,
+      height: this.height,
+    });
+    workers[1].postMessage({
       type: "setDimensions",
       width: this.width,
       height: this.height,
@@ -79,15 +98,25 @@ export class GridStub {
   }
 
   private sendScrollPosition = throttle(() => {
-    worker.postMessage({
+    workers[this.nextWorker].postMessage({
       type: "setScrollPosition",
       left: this.left,
       top: this.top,
     });
-  }, 8);
+    if (this.nextWorker) {
+      this.nextWorker = 0;
+    } else {
+      this.nextWorker = 1;
+    }
+  }, 16);
 
   private sendLastScrollPosition = debounce(() => {
-    worker.postMessage({
+    workers[0].postMessage({
+      type: "setScrollPosition",
+      left: this.left,
+      top: this.top,
+    });
+    workers[1].postMessage({
       type: "setScrollPosition",
       left: this.left,
       top: this.top,
@@ -111,7 +140,11 @@ export class GridStub {
   }
 
   fireClickEvent(options: { left: number; top: number; shiftKey?: boolean }) {
-    worker.postMessage({
+    workers[0].postMessage({
+      type: "onClick",
+      ...options,
+    });
+    workers[1].postMessage({
       type: "onClick",
       ...options,
     });

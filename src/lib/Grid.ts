@@ -10,6 +10,7 @@ const ratio = 2;
 
 export class Grid extends BaseGrid {
   public readonly headerHeight = 48;
+  public caches: HTMLCanvasElement[] = [];
   constructor(
     private ctx: CanvasRenderingContext2D,
     canvasElement: HTMLCanvasElement
@@ -89,6 +90,7 @@ export class Grid extends BaseGrid {
       return;
     }
     this.ctx.setTransform(ratio, 0, 0, ratio, 0.5, 0.5);
+    this.ctx.lineWidth = 1;
     if (this.columnConfig && this.columnWidths?.length === 0) {
       this.calculateColumnWidths(this.columnConfig || []);
     }
@@ -102,9 +104,21 @@ export class Grid extends BaseGrid {
     const lastIndex =
       firstIndex + Math.floor(this.height / ratio / this.rowHeight);
     const activeData = this.calculatedData?.slice(firstIndex, lastIndex + 1);
-
+    this.ctx.beginPath();
     activeData?.forEach((datapoint, index) => {
-      this.drawRow(firstIndex + index, index);
+      const offsetTop = this.scrollTop % this.rowHeight;
+      const y = Math.floor(index * this.rowHeight - offsetTop);
+
+      this.drawRowDelimiter(y);
+    });
+    this.ctx.closePath();
+    this.ctx.stroke();
+    this.ctx.beginPath();
+    activeData?.forEach((datapoint, index) => {
+      const offsetTop = this.scrollTop % this.rowHeight;
+      const y = Math.floor(index * this.rowHeight - offsetTop);
+
+      this.drawRow(firstIndex + index, y);
     });
   }
 
@@ -112,29 +126,25 @@ export class Grid extends BaseGrid {
     this.columnWidths = calculateColumnWidths(columns, this.width, ratio);
   }
 
-  drawRow(absoluteIndex: number, index: number) {
-    const offsetTop = this.scrollTop % this.rowHeight;
-    const y = Math.floor(index * this.rowHeight - offsetTop);
-
-    this.ctx.beginPath();
-    this.ctx.lineWidth = 1;
-    if (this.selectionIndizes[absoluteIndex]) {
-      this.ctx.fillStyle = this.backgroundColorSelection;
-      this.ctx.fillRect(0, y, this.ctx.canvas.width, this.rowHeight);
-    }
-    this.ctx.fillStyle = this.backgroundColor;
+  drawRowDelimiter(y: number) {
     this.ctx.moveTo(0, y);
     this.ctx.strokeStyle = this.textColor;
     this.ctx.fillStyle = this.textColor;
     this.ctx.lineTo(this.width, y);
-    this.ctx.closePath();
-    this.ctx.stroke();
+  }
+
+  drawRow(absoluteIndex: number, y: number) {
+    if (this.selectionIndizes[absoluteIndex]) {
+      this.ctx.fillStyle = this.backgroundColorSelection;
+      this.ctx.fillRect(0, y, this.ctx.canvas.width, this.rowHeight);
+    }
+    this.ctx.strokeStyle = this.textColor;
+    this.ctx.fillStyle = this.textColor;
 
     const row = this.calculatedData[absoluteIndex].data;
     const hasChildren = row.chidlren && row.chidlren.length > 0;
 
-    let x =
-      20 * (this.calculatedData?.[absoluteIndex].level || 0) - this.scrollLeft;
+    let x = 0 - this.scrollLeft;
 
     if (hasChildren) {
       this.drawTreeControl(

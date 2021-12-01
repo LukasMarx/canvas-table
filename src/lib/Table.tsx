@@ -26,6 +26,8 @@ let ratio = 2;
 export function Table(props: TableProps): ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasWrapperRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef2 = useRef<HTMLCanvasElement>(null);
+  const canvasWrapperRef2 = useRef<HTMLCanvasElement>(null);
   const fakeScroll = useRef<HTMLDivElement>();
   const { width = 1, height = 1 } = useResizeObserver<HTMLDivElement>({
     box: "border-box",
@@ -33,7 +35,6 @@ export function Table(props: TableProps): ReactElement {
   });
 
   const [grid, setGrid] = useState<GridStub | undefined>();
-  const [top, setTop] = useState(0);
   const [left, setLeft] = useState(0);
 
   const scrollWidth = useMemo(() => {
@@ -43,7 +44,7 @@ export function Table(props: TableProps): ReactElement {
     );
   }, []);
 
-  const handleSroll = () => {
+  const handleSroll = useCallback(() => {
     const maxScrollTop =
       (gridRef.current?.rowHeight || 0) * (props.data.length || 0) - height;
     const top =
@@ -62,20 +63,29 @@ export function Table(props: TableProps): ReactElement {
       gridRef.current.top = top;
       gridRef.current.left = left;
     }
-    setTop(top);
     setLeft(left);
-  };
+    if (gridRef.current?.nextWorker === 0) {
+      canvasRef.current!.style.display = "none";
+      canvasRef2.current!.style.display = "unset";
+    } else {
+      canvasRef2.current!.style.display = "none";
+      canvasRef.current!.style.display = "unset";
+    }
+
+    if (canvasWrapperRef.current) {
+      canvasWrapperRef.current.style.transform = `translate(${left}px, ${top}px)`;
+    }
+  }, []);
 
   const gridRef = useRef<GridStub>();
   const hasScrollListenerRef = useRef(false);
   useEffect(() => {
-    const handleScrollEvent = () => handleSroll();
     if (!gridRef.current && canvasRef.current) {
-      const newGrid = new GridStub(canvasRef.current);
+      const newGrid = new GridStub([canvasRef.current, canvasRef2.current!]);
       gridRef.current = newGrid;
       setGrid(newGrid);
       if (!hasScrollListenerRef.current) {
-        fakeScroll.current?.addEventListener("scroll", handleScrollEvent);
+        fakeScroll.current?.addEventListener("scroll", handleSroll);
         hasScrollListenerRef.current = true;
       }
     }
@@ -145,12 +155,23 @@ export function Table(props: TableProps): ReactElement {
           ref={canvasWrapperRef as any}
           style={{
             position: "absolute",
-            transform: `translate(${left}px, ${top}px)`,
             pointerEvents: "none",
           }}
         >
           <canvas
             ref={canvasRef}
+            height={height * ratio}
+            width={(width - 18) * ratio}
+            style={{
+              width: width - 18,
+              height: height,
+              pointerEvents: "all",
+            }}
+            onClick={handleClick}
+          />
+
+          <canvas
+            ref={canvasRef2}
             height={height * ratio}
             width={(width - 18) * ratio}
             style={{

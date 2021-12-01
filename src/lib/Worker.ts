@@ -20,7 +20,7 @@ onmessage = (evt: MessageEvent<WorkerMessage>) => {
     }
     if (evt.data.type === "init") {
       const canvas = evt.data.canvas;
-      const ctx = canvas.getContext("2d")!;
+      const ctx = canvas.getContext("2d", { alpha: true })!;
       grid = new Grid(ctx, canvas);
       grid.blockRedraw = true;
       grid.data = evt.data.data;
