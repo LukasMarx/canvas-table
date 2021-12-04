@@ -8,6 +8,10 @@ import { ColumnConfig } from "./lib/types/ColumnConfig";
 function App() {
   const [columnConfig, setColumnConfig] = useState<ColumnConfig[]>([
     {
+      field: "name",
+      width: 150,
+    },
+    {
       field: "index",
       width: 80,
     },
@@ -15,10 +19,7 @@ function App() {
       field: "guid",
       width: 300,
     },
-    {
-      field: "name",
-      width: 150,
-    },
+
     {
       field: "isActive",
       width: 100,

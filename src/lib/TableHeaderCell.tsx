@@ -1,12 +1,15 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { ColumnConfig } from "./types/ColumnConfig";
 
 export function TableHeaderCell(props: {
   id: string;
   width: number;
   height: number;
+  column: ColumnConfig;
   title: string;
+  onClick?(column: ColumnConfig): void;
 }) {
   const {
     attributes,
@@ -29,8 +32,18 @@ export function TableHeaderCell(props: {
     transition,
   };
 
+  const handleClick = useCallback(() => {
+    props.onClick?.(props.column);
+  }, [props.column, props.onClick]);
+
   return (
-    <div ref={setNodeRef} {...attributes} {...listeners} style={style}>
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={style}
+      onClick={handleClick}
+    >
       <div
         style={{
           display: "flex",

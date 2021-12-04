@@ -6,7 +6,7 @@ import { calculateColumnWidths, debounce, throttle } from "./utils/Util";
 
 const stringFormatter = new StringFormatter();
 
-const ratio = 2;
+const ratio = 4;
 
 export class Grid extends BaseGrid {
   public readonly headerHeight = 48;
@@ -36,6 +36,7 @@ export class Grid extends BaseGrid {
     const firstIndex = this.scrollTop / this.rowHeight;
     const rowIndex = Math.floor(firstIndex + options.top / this.rowHeight);
     const rowData = this.calculatedData?.[rowIndex].data;
+    const level = this.calculatedData?.[rowIndex].level;
     let cellIndex: number | undefined = undefined;
     let left = 0;
     this.columnConfig?.forEach((column, index) => {
@@ -51,9 +52,15 @@ export class Grid extends BaseGrid {
       cellIndex !== undefined ? this.columnConfig?.[cellIndex] : undefined;
 
     const key = this.buildSelectionKeys(rowData);
+    const treeControlWidth = 25;
 
     // Check if clicked on TreeControl
-    if (rowData.chidlren && options.left > 4 && options.left < 22) {
+    const offset = level * treeControlWidth;
+    if (
+      rowData.children &&
+      options.left > 4 + offset &&
+      options.left < 22 + offset
+    ) {
       if (this.expandedKeys[key]) {
         const newKeys = { ...this.expandedKeys };
         delete newKeys[key];
@@ -79,10 +86,6 @@ export class Grid extends BaseGrid {
     } else {
       this.selectionKeys = { ...this.selectionKeys, [key]: true };
     }
-  }
-
-  getActiveData() {
-    return;
   }
 
   redraw() {
@@ -130,6 +133,7 @@ export class Grid extends BaseGrid {
     this.ctx.moveTo(0, y);
     this.ctx.strokeStyle = this.textColor;
     this.ctx.fillStyle = this.textColor;
+    this.ctx.lineWidth = 0.5;
     this.ctx.lineTo(this.width, y);
   }
 
@@ -142,16 +146,26 @@ export class Grid extends BaseGrid {
     this.ctx.fillStyle = this.textColor;
 
     const row = this.calculatedData[absoluteIndex].data;
-    const hasChildren = row.chidlren && row.chidlren.length > 0;
+    const level = this.calculatedData[absoluteIndex].level;
+    const hasChildren = row.children && row.children.length > 0;
 
     let x = 0 - this.scrollLeft;
+    const treeControlWidth = 25;
+    const treeBranchWidth = 25;
 
     if (hasChildren) {
       this.drawTreeControl(
         this.expandedIndizes[absoluteIndex],
-        8 - this.scrollLeft,
+        8 - this.scrollLeft + level * treeControlWidth,
         y
       );
+    }
+    const offsetLeft = hasChildren
+      ? (level + 1) * treeControlWidth
+      : level * treeBranchWidth;
+
+    if (!hasChildren || level > 0) {
+      this.drawTreeBranch(-12 - this.scrollLeft + level * treeControlWidth, y);
     }
 
     this.columnConfig?.forEach((column, index) => {
@@ -166,7 +180,7 @@ export class Grid extends BaseGrid {
         this.drawCell(
           this.calculatedData?.[absoluteIndex]?.data?.[column.field],
           y,
-          index === 0 ? x + 26 : x,
+          index === 0 ? x + offsetLeft : x,
           this.columnWidths[index]
         );
         this.ctx.closePath();
@@ -190,6 +204,18 @@ export class Grid extends BaseGrid {
     }
 
     this.ctx.fill();
+    this.ctx.closePath();
+  }
+
+  drawTreeBranch(x: number, rowTop: any) {
+    this.ctx.beginPath();
+    this.ctx.lineWidth = 1;
+    const bottom = rowTop + this.rowHeight / 2;
+    this.ctx.moveTo(x, rowTop + 5);
+    this.ctx.lineTo(x, bottom);
+    this.ctx.lineTo(x + 5, bottom);
+
+    this.ctx.stroke();
     this.ctx.closePath();
   }
 

@@ -20,7 +20,15 @@ import {
 
 import "./Table.css";
 import { TableHeaderCell } from "./TableHeaderCell";
-import { DndContext, DragEndEvent } from "@dnd-kit/core";
+import {
+  DndContext,
+  DragEndEvent,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 
 interface TableHeaderProps {
   columns?: ColumnConfig[];
@@ -28,6 +36,7 @@ interface TableHeaderProps {
   backgroundColor?: string;
   scrollLeft?: number;
   onColumnsChange?(columns: ColumnConfig[]): void;
+  onClick?(column: ColumnConfig): void;
 }
 
 const ratio = 2;
@@ -127,6 +136,19 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
     });
   }, []);
 
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 5,
+      } as any,
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        distance: 5,
+      } as any,
+    })
+  );
+
   return (
     <div
       ref={outerRef as any}
@@ -151,7 +173,7 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
           }}
         >
           {columnConfig && (
-            <DndContext onDragEnd={handleDragEnd}>
+            <DndContext onDragEnd={handleDragEnd} sensors={sensors}>
               <SortableContext
                 items={items}
                 strategy={horizontalListSortingStrategy}
@@ -164,6 +186,8 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
                       title={column.field}
                       height={headerHeight}
                       width={column.width}
+                      onClick={props.onClick}
+                      column={column}
                     ></TableHeaderCell>
                   );
                 })}

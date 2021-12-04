@@ -80,17 +80,17 @@ export class BaseGrid {
     for (const data of allData || []) {
       result.push({ level, data });
       const key = this.buildSelectionKeys(data);
-      if (this.expandedKeys[key] && data.chidlren) {
+      if (this.expandedKeys[key] && data.children) {
         indizes[index] = true;
         const { rows: subResult, openIndizes } = this.caculateData(
-          data.chidlren,
+          data.children,
           level + 1
         );
         Object.keys(openIndizes).forEach(
-          (i) => (indizes[(index + i) as any] = true)
+          (i) => (indizes[(index + parseInt(i, 10) + 1) as any] = true)
         );
         subResult.forEach((res) => result.push(res));
-        index += Object.keys(data.chidlren).length;
+        index += Object.keys(data.children).length;
       }
       index++;
     }
@@ -250,7 +250,9 @@ export class BaseGrid {
   }
   public set expandedKeys(value: Record<string, boolean>) {
     this._expandedKeys = value;
+    console.log(this.expandedKeys);
     const { openIndizes, rows } = this.caculateData(this.data || []);
+    console.log(openIndizes);
     this.expandedIndizes = openIndizes;
     this.calculatedData = rows;
     this.calculateSelection();

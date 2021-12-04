@@ -22,7 +22,7 @@ interface TableProps {
   onColumnsChange?(columns: ColumnConfig[]): void;
 }
 
-let ratio = 2;
+let ratio = 4;
 
 export function Table(props: TableProps): ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
