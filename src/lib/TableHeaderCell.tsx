@@ -42,6 +42,7 @@ export function TableHeaderCell(props: {
       {...attributes}
       {...listeners}
       style={style}
+      className={"column-header"}
       onClick={handleClick}
     >
       <div

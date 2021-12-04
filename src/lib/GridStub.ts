@@ -1,6 +1,7 @@
+import { IFormatter } from "./formatter/IFormatter";
 import { ColumnConfig } from "./types/ColumnConfig";
 import { debounce, throttle } from "./utils/Util";
-import Worker from "./Worker?worker";
+import Worker from "./worker/Worker?worker";
 
 const workers = [new Worker(), new Worker()];
 
@@ -110,7 +111,7 @@ export class GridStub {
     }
   }, 16);
 
-  private sendScrollPositionHorizontal = () => {
+  private sendScrollPositionHorizontal = throttle(() => {
     workers[this.nextWorker].postMessage({
       type: "setScrollPosition",
       left: this.left,
@@ -121,7 +122,7 @@ export class GridStub {
     } else {
       this.nextWorker = 1;
     }
-  };
+  }, 16);
 
   private sendLastScrollPosition = debounce(() => {
     workers[0].postMessage({
@@ -134,7 +135,7 @@ export class GridStub {
       left: this.left,
       top: this.top,
     });
-  }, 16);
+  }, 64);
 
   public get left(): number {
     return this._left;
@@ -142,6 +143,7 @@ export class GridStub {
   public set left(value: number) {
     this._left = value;
     this.sendScrollPositionHorizontal();
+    this.sendLastScrollPosition();
   }
   public get top(): number {
     return this._top;

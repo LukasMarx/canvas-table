@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 import useResizeObserver from "use-resize-observer";
-import { StringFormatter } from "./StringFormatter";
+import { StringFormatter } from "./formatter/StringFormatter";
 import { ColumnConfig } from "./types/ColumnConfig";
 import { calculateColumnWidths, throttle } from "./utils/Util";
 import {

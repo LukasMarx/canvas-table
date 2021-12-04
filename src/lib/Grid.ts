@@ -1,5 +1,6 @@
 import { BaseGrid } from "./BaseGrid";
-import { StringFormatter } from "./StringFormatter";
+import { IFormatter } from "./formatter/IFormatter";
+import { StringFormatter } from "./formatter/StringFormatter";
 import { ColumnConfig } from "./types/ColumnConfig";
 import { RowClickEvent } from "./types/Events";
 import { calculateColumnWidths, debounce, throttle } from "./utils/Util";
@@ -8,16 +9,30 @@ const stringFormatter = new StringFormatter();
 
 const ratio = 4;
 
+const emptyFormatterParams = {};
+const emptyContext = {};
+
 export class Grid extends BaseGrid {
   public readonly headerHeight = 48;
+  public readonly cellPadding = 8;
   public caches: HTMLCanvasElement[] = [];
+  private formatters: Record<string, IFormatter<any>> = {};
   constructor(
     private ctx: CanvasRenderingContext2D,
-    canvasElement: HTMLCanvasElement
+    canvasElement: HTMLCanvasElement,
+    formatters: Record<
+      string,
+      {
+        new (): IFormatter<any>;
+      }
+    >
   ) {
     super();
     this.canvas = canvasElement;
     this.calculateColumnWidths(this.columnConfig || []);
+    Object.entries(formatters).forEach(([key, formatter]) => {
+      this.formatters[key] = new formatter();
+    });
   }
 
   onClick(options: { left: number; top: number; shiftKey?: boolean }) {
@@ -156,7 +171,7 @@ export class Grid extends BaseGrid {
     if (hasChildren) {
       this.drawTreeControl(
         this.expandedIndizes[absoluteIndex],
-        8 - this.scrollLeft + level * treeControlWidth,
+        this.cellPadding - this.scrollLeft + level * treeControlWidth,
         y
       );
     }
@@ -175,15 +190,29 @@ export class Grid extends BaseGrid {
         (x + this.columnWidths[index] >= 0 &&
           x + this.columnWidths[index] <= ratioWidth)
       ) {
+        this.ctx.save();
+        this.ctx.rect(
+          index === 0 ? x + offsetLeft : x,
+          y,
+          index === 0
+            ? this.columnWidths[index] - this.cellPadding - offsetLeft
+            : this.columnWidths[index] - this.cellPadding,
+          this.rowHeight
+        );
+        this.ctx.clip();
         this.ctx.beginPath();
         this.ctx.font = "normal 14px sans-serif";
         this.drawCell(
           this.calculatedData?.[absoluteIndex]?.data?.[column.field],
+          column,
           y,
           index === 0 ? x + offsetLeft : x,
-          this.columnWidths[index]
+          index === 0
+            ? this.columnWidths[index] - this.cellPadding - offsetLeft
+            : this.columnWidths[index] - this.cellPadding
         );
         this.ctx.closePath();
+        this.ctx.restore();
       }
       x += this.columnWidths[index];
     });
@@ -219,14 +248,26 @@ export class Grid extends BaseGrid {
     this.ctx.closePath();
   }
 
-  drawCell(value: any, top: any, x: number, width: number, rowHeight?: number) {
-    stringFormatter.format(
+  drawCell(
+    value: any,
+    column: ColumnConfig,
+    top: any,
+    x: number,
+    width: number,
+    rowHeight?: number
+  ) {
+    const formatter = column.formatter
+      ? this.formatters[column.formatter]
+      : this.formatters["default"] || this.formatters["default"];
+    formatter?.formatTableCell(
       this.ctx,
       value,
       top,
       x,
       width,
-      rowHeight || this.rowHeight
+      rowHeight || this.rowHeight,
+      column.formatterParams || emptyFormatterParams,
+      emptyContext
     );
   }
 }

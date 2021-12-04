@@ -35,6 +35,9 @@ function App() {
     {
       field: "age",
       width: 100,
+      formatterParams: {
+        alignHorizontal: "left",
+      },
     },
     {
       field: "eyeColor",

@@ -15,6 +15,7 @@ import { ColumnConfig } from "./types/ColumnConfig";
 import { TableHeader } from "./TableHeader";
 import { calculateColumnWidths, debounce } from "./utils/Util";
 import { GridStub } from "./GridStub";
+import { IFormatter } from "./formatter/IFormatter";
 
 interface TableProps {
   data: any[];
