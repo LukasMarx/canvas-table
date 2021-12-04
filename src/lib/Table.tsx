@@ -19,6 +19,7 @@ import { GridStub } from "./GridStub";
 interface TableProps {
   data: any[];
   columns?: ColumnConfig[];
+  onColumnsChange?(columns: ColumnConfig[]): void;
 }
 
 let ratio = 2;
@@ -42,7 +43,7 @@ export function Table(props: TableProps): ReactElement {
       (prev, next) => prev + next,
       0
     );
-  }, []);
+  }, [props.columns]);
 
   const handleSroll = useCallback(() => {
     const maxScrollTop =
@@ -130,6 +131,10 @@ export function Table(props: TableProps): ReactElement {
       };
   };
 
+  const handleColumnsChange = (columns: ColumnConfig[]) => {
+    props.onColumnsChange?.(columns);
+  };
+
   return (
     <div
       style={{
@@ -141,7 +146,11 @@ export function Table(props: TableProps): ReactElement {
         flexDirection: "column",
       }}
     >
-      <TableHeader columns={props.columns} scrollLeft={left} />
+      <TableHeader
+        columns={props.columns}
+        scrollLeft={left}
+        onColumnsChange={handleColumnsChange}
+      />
       <div
         ref={fakeScroll as any}
         style={{

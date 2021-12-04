@@ -44,11 +44,11 @@ export class GridStub {
     this._columnConfig = value;
     workers[0].postMessage({
       type: "setColumns",
-      data: value,
+      columns: value,
     });
     workers[1].postMessage({
       type: "setColumns",
-      data: value,
+      columns: value,
     });
   }
 
@@ -110,6 +110,19 @@ export class GridStub {
     }
   }, 16);
 
+  private sendScrollPositionHorizontal = () => {
+    workers[this.nextWorker].postMessage({
+      type: "setScrollPosition",
+      left: this.left,
+      top: this.top,
+    });
+    if (this.nextWorker) {
+      this.nextWorker = 0;
+    } else {
+      this.nextWorker = 1;
+    }
+  };
+
   private sendLastScrollPosition = debounce(() => {
     workers[0].postMessage({
       type: "setScrollPosition",
@@ -128,7 +141,7 @@ export class GridStub {
   }
   public set left(value: number) {
     this._left = value;
-    this.sendScrollPosition();
+    this.sendScrollPositionHorizontal();
   }
   public get top(): number {
     return this._top;

@@ -6,7 +6,7 @@ import data from "./generated.json";
 import { ColumnConfig } from "./lib/types/ColumnConfig";
 
 function App() {
-  const columnConfig: ColumnConfig[] = [
+  const [columnConfig, setColumnConfig] = useState<ColumnConfig[]>([
     {
       field: "index",
       width: 80,
@@ -63,11 +63,15 @@ function App() {
       field: "longitude",
       width: 100,
     },
-  ];
+  ]);
 
   return (
     <div className="App" style={{ padding: 128, boxSizing: "border-box" }}>
-      <Table data={data} columns={columnConfig} />
+      <Table
+        data={data}
+        columns={columnConfig}
+        onColumnsChange={setColumnConfig}
+      />
     </div>
   );
 }

@@ -30,9 +30,9 @@ export function calculateColumnWidths(
 
 export function throttle(callback: any, limit: number) {
   var tick = false;
-  return function () {
+  return function (...args: any) {
     if (!tick) {
-      callback.call();
+      callback(...args);
       tick = true;
       setTimeout(function () {
         tick = false;
