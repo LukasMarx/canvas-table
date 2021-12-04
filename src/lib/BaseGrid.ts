@@ -73,28 +73,28 @@ export class BaseGrid {
     this.selectionData = selectionData;
   }
 
-  caculateData(allData: any[], level = 0) {
+  caculateData(allData: any[], level = 0, index = 0) {
     const result: any[] = [];
     const indizes: Record<number, boolean> = {};
-    let index = 0;
     for (const data of allData || []) {
       result.push({ level, data });
       const key = this.buildSelectionKeys(data);
       if (this.expandedKeys[key] && data.children) {
         indizes[index] = true;
-        const { rows: subResult, openIndizes } = this.caculateData(
-          data.children,
-          level + 1
-        );
+        const {
+          rows: subResult,
+          openIndizes,
+          index: newIndex,
+        } = this.caculateData(data.children, level + 1, index + 1);
         Object.keys(openIndizes).forEach(
-          (i) => (indizes[(index + parseInt(i, 10) + 1) as any] = true)
+          (i) => (indizes[parseInt(i, 10) as any] = true)
         );
         subResult.forEach((res) => result.push(res));
-        index += Object.keys(data.children).length;
+        index = newIndex - 1;
       }
       index++;
     }
-    return { rows: result, openIndizes: indizes };
+    return { rows: result, openIndizes: indizes, index };
   }
 
   public get calculatedData(): { level: number; data: any }[] {
