@@ -34,6 +34,9 @@ export class GridStub {
             [offscreens[index] as any]
           );
         }
+        if (message.data?.type === "heightChange") {
+          this.onHeightChange(message.data.height);
+        }
       });
     });
   }
@@ -153,6 +156,8 @@ export class GridStub {
     this.sendScrollPosition();
     this.sendLastScrollPosition();
   }
+
+  public onHeightChange: (height: number) => void = () => {};
 
   fireClickEvent(options: { left: number; top: number; shiftKey?: boolean }) {
     workers[0].postMessage({

@@ -97,6 +97,8 @@ export class BaseGrid {
     return { rows: result, openIndizes: indizes, index };
   }
 
+  public onHeightChange: (height: number) => void = () => {};
+
   public get calculatedData(): { level: number; data: any }[] {
     return this._calculatedData;
   }
@@ -229,6 +231,7 @@ export class BaseGrid {
     this.expandedIndizes = openIndizes;
     this.calculatedData = rows;
     this.calculateSelection();
+    this.onHeightChange(this.calculatedData.length * this.rowHeight);
     this.redraw();
   }
 
@@ -256,6 +259,7 @@ export class BaseGrid {
     this.expandedIndizes = openIndizes;
     this.calculatedData = rows;
     this.calculateSelection();
+    this.onHeightChange(this.calculatedData.length * this.rowHeight);
     this.redraw();
   }
 

@@ -36,6 +36,8 @@ export function Table(props: TableProps): ReactElement {
     ref: fakeScroll.current,
   });
 
+  const [dataHeight, setDataHeight] = useState(0);
+
   const [grid, setGrid] = useState<GridStub | undefined>();
   const [left, setLeft] = useState(0);
 
@@ -46,9 +48,20 @@ export function Table(props: TableProps): ReactElement {
     );
   }, [props.columns]);
 
+  const heightRef = useRef<number>();
+  const dataHeigtRef = useRef<number>();
+  const dataRef = useRef<any[]>();
+  useEffect(() => {
+    heightRef.current = height;
+    dataHeigtRef.current = dataHeight;
+    dataRef.current = props.data;
+  }, [height, props.data, dataHeight]);
+
   const handleSroll = useCallback(() => {
     const maxScrollTop =
-      (gridRef.current?.rowHeight || 0) * (props.data.length || 0) - height;
+      (dataHeigtRef.current ||
+        (gridRef.current?.rowHeight || 0) * (dataRef.current?.length || 0)) -
+      (heightRef.current || 0);
     const top =
       (fakeScroll?.current?.scrollTop || 0) < maxScrollTop
         ? fakeScroll.current?.scrollTop || 0
@@ -84,6 +97,9 @@ export function Table(props: TableProps): ReactElement {
   useEffect(() => {
     if (!gridRef.current && canvasRef.current) {
       const newGrid = new GridStub([canvasRef.current, canvasRef2.current!]);
+      newGrid.onHeightChange = (height: number) => {
+        setDataHeight(height);
+      };
       gridRef.current = newGrid;
       setGrid(newGrid);
       if (!hasScrollListenerRef.current) {
@@ -91,7 +107,7 @@ export function Table(props: TableProps): ReactElement {
         hasScrollListenerRef.current = true;
       }
     }
-  });
+  }, []);
 
   useEffect(() => {
     if (props.data && grid) {
@@ -194,7 +210,7 @@ export function Table(props: TableProps): ReactElement {
         </div>
         <div
           style={{
-            height: (grid?.rowHeight || 0) * props.data.length,
+            height: dataHeight || (grid?.rowHeight || 0) * props.data.length,
             width: scrollWidth,
             position: "relative",
             overflow: "hidden",

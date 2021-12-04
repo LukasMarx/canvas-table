@@ -31,6 +31,9 @@ export function initializeWorker(
         const canvas = evt.data.canvas;
         const ctx = canvas.getContext("2d", { alpha: true })!;
         grid = new Grid(ctx, canvas, formatters);
+        grid.onHeightChange = (height: number) => {
+          self.postMessage({ type: "heightChange", height: height });
+        };
         grid.blockRedraw = true;
         grid.data = evt.data.data;
         grid.columnConfig = evt.data.columns;
