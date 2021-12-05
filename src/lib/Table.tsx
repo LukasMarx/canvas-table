@@ -15,6 +15,8 @@ import { GridStub } from "./GridStub";
 import { GridOptions } from "./types/Grid";
 import { DeepPartial } from "./types/DeepPartial";
 import "./Table.css";
+import { defaultOptions } from "./DefaultOptions";
+import merge from "lodash.merge";
 
 interface TableProps {
   data: any[];
@@ -47,6 +49,14 @@ export function Table(props: TableProps): ReactElement {
       0
     );
   }, [props.columns]);
+
+  const options = useMemo(() => {
+    if (props.options) {
+      return merge(defaultOptions, props.options);
+    } else {
+      return JSON.parse(JSON.stringify(defaultOptions));
+    }
+  }, [props.options]);
 
   const heightRef = useRef<number>();
   const dataHeigtRef = useRef<number>();
@@ -96,8 +106,10 @@ export function Table(props: TableProps): ReactElement {
   const hasScrollListenerRef = useRef(false);
   useEffect(() => {
     if (!gridRef.current && canvasRef.current) {
-      const newGrid = new GridStub([canvasRef.current, canvasRef2.current!]);
-      newGrid.options = props.options;
+      const newGrid = new GridStub(
+        [canvasRef.current, canvasRef2.current!],
+        options
+      );
       newGrid.onHeightChange = (height: number) => {
         setDataHeight(height);
       };
@@ -117,10 +129,10 @@ export function Table(props: TableProps): ReactElement {
   }, [grid, props.data]);
 
   useEffect(() => {
-    if (props.options && grid) {
-      grid.options = props.options;
+    if (options && grid) {
+      grid.options = options;
     }
-  }, [grid, props.options]);
+  }, [grid, options]);
 
   useEffect(() => {
     if (grid) {
@@ -159,6 +171,55 @@ export function Table(props: TableProps): ReactElement {
     props.onColumnsChange?.(columns);
   };
 
+  const handleTableHeaderClick = useCallback(
+    (e: React.MouseEvent, column: ColumnConfig) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const newColumnConfig = JSON.parse(
+        JSON.stringify(props.columns || [])
+      ) as ColumnConfig[];
+
+      newColumnConfig.forEach((col) => {
+        if (col.field === column.field && col.formatter === column.formatter) {
+          if (e.ctrlKey) {
+            delete col.sortIndex;
+            delete col.sortDirection;
+          } else if (e.shiftKey) {
+            if (col.sortIndex !== undefined) {
+              if (col.sortDirection === "asc") {
+                col.sortDirection = "desc";
+              } else if (col.sortDirection === "desc" || !col.sortDirection) {
+                col.sortDirection = "asc";
+              }
+            } else {
+              let nextIndex = 0;
+              newColumnConfig.forEach((col) => {
+                if (col.sortIndex !== undefined && col.sortIndex >= nextIndex) {
+                  nextIndex = col.sortIndex + 1;
+                }
+              });
+              col.sortIndex = nextIndex;
+              col.sortDirection = "asc";
+            }
+          } else {
+            col.sortIndex = 0;
+
+            if (col.sortDirection === "asc") {
+              col.sortDirection = "desc";
+            } else if (col.sortDirection === "desc" || !col.sortDirection) {
+              col.sortDirection = "asc";
+            }
+          }
+        } else if (!e.shiftKey) {
+          delete col.sortIndex;
+          delete col.sortDirection;
+        }
+      });
+      props.onColumnsChange?.(newColumnConfig);
+    },
+    [props.columns, props.onColumnsChange]
+  );
+
   return (
     <div
       style={{
@@ -175,6 +236,7 @@ export function Table(props: TableProps): ReactElement {
         scrollLeft={left}
         onColumnsChange={handleColumnsChange}
         options={props.options}
+        onClick={handleTableHeaderClick}
       />
       <div
         ref={fakeScroll as any}

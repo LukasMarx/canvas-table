@@ -38,7 +38,7 @@ interface TableHeaderProps {
   backgroundColor?: string;
   scrollLeft?: number;
   onColumnsChange?(columns: ColumnConfig[]): void;
-  onClick?(column: ColumnConfig): void;
+  onClick?(e: React.MouseEvent, column: ColumnConfig): void;
   options?: DeepPartial<GridOptions>;
 }
 
@@ -152,6 +152,12 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
     })
   );
 
+  const hasMoreThanOneSortIndex = useMemo(() => {
+    return (
+      (props.columns?.filter((c) => c.sortIndex !== undefined).length || 0) > 1
+    );
+  }, [props.columns]);
+
   return (
     <div
       ref={outerRef as any}
@@ -198,6 +204,7 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
                       onClick={props.onClick}
                       column={column}
                       options={props.options}
+                      hasMoreThanOneSortIndex={hasMoreThanOneSortIndex}
                     ></TableHeaderCell>
                   );
                 })}

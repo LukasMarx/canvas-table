@@ -1,9 +1,10 @@
 import { ColumnConfig } from "./types/ColumnConfig";
-import { CellClickEvent, RowClickEvent } from "./types/Events";
+import { RowClickEvent } from "./types/Events";
 import { v4 } from "uuid";
 import { GridOptions } from "./types/Grid";
-import merge from "lodash.merge";
-import { DeepPartial } from "./types/DeepPartial";
+import { IFormatter } from "./formatter/IFormatter";
+import { createNewSortInstance } from "fast-sort";
+import { get } from "object-path";
 
 export class BaseGrid {
   protected canvas: any;
@@ -22,42 +23,14 @@ export class BaseGrid {
   private _expandedIndizes: Record<number, boolean> = {};
   private _calculatedData: { level: number; data: any }[] = [];
   private _options: GridOptions;
-  protected _defaultOptions: GridOptions = {
-    theme: {
-      font: {
-        familiy: "sans-serif",
-        size: 14,
-        weight: "normal",
-        style: "normal",
-        variant: "normal",
-      },
-      palette: {
-        textColor: "#212121",
-        textColorSelected: "#212121",
-        backgroundColor: "#fff",
-        backgroundColorSelected: "#eee",
-        headerBackgroundColor: "#fff",
-        headerBackgroundColorDragging: "#eee",
-        headerTextColor: "#fff",
-        headerTextColorDragging: "#fff",
-        lineColor: "#212121",
-      },
-      spacing: {
-        cellPaddingLeft: 8,
-        cellPaddingRight: 8,
-      },
-    },
-    rowHeight: 32,
-  };
+  protected formatters: Record<string, IFormatter<any>> = {};
+  protected fastSortScheme: any;
 
   private _blockRedraw = false;
 
-  constructor(gridOptions?: DeepPartial<GridOptions>) {
-    if (gridOptions) {
-      this._options = merge(this._defaultOptions, gridOptions);
-    } else {
-      this._options = this._defaultOptions;
-    }
+  constructor(gridOptions: GridOptions) {
+    this._options = gridOptions;
+    this.calculateFastSortScheme();
   }
 
   public get rowHeight() {
@@ -114,10 +87,67 @@ export class BaseGrid {
     this.selectionData = selectionData;
   }
 
+  calculateFastSortScheme() {
+    const result = [];
+    for (const column of this.columnConfig || []) {
+      if (column.sortIndex !== undefined) {
+        const formatter = column.formatter
+          ? this.formatters[column.formatter]
+          : this.formatters["default"] || this.formatters["default"];
+        if (
+          column.sortDirection === "asc" ||
+          column.sortDirection === undefined
+        )
+          result[column.sortIndex] = {
+            asc: (u: any) =>
+              formatter.toText(
+                get(u, column.field),
+                column.formatterParams || {},
+                { gridOptions: this.options }
+              ),
+            comparer: new Intl.Collator(undefined, {
+              numeric: true,
+              sensitivity: "base",
+            }).compare,
+          };
+        if (column.sortDirection === "desc")
+          result[column.sortIndex] = {
+            desc: (u: any) =>
+              formatter.toText(
+                get(u, column.field),
+                column.formatterParams || {},
+                { gridOptions: this.options }
+              ),
+            comparer: new Intl.Collator(undefined, {
+              numeric: true,
+              sensitivity: "base",
+            }).compare,
+          };
+      }
+    }
+    this.fastSortScheme = result;
+  }
+
+  private sorter = createNewSortInstance({
+    comparer(a: any, b: any): number {
+      if (a == null) return 1;
+      if (b == null) return -1;
+      if (a < b) return -1;
+      if (a === b) return 0;
+
+      return 1;
+    },
+  });
+
+  sortData(allData: any[]) {
+    return this.sorter(allData).by(this.fastSortScheme);
+  }
+
   caculateData(allData: any[], level = 0, index = 0) {
     const result: any[] = [];
     const indizes: Record<number, boolean> = {};
-    for (const data of allData || []) {
+    const sortedData = this.sortData(allData);
+    for (const data of sortedData || []) {
       result.push({ level, data });
       const key = this.buildSelectionKeys(data);
       if (this.expandedKeys[key] && data.children) {
@@ -236,9 +266,39 @@ export class BaseGrid {
   public get columnConfig(): ColumnConfig[] | undefined {
     return this._columnConfig;
   }
+
+  private doesRequireFullUpdate(
+    oldValue?: ColumnConfig[],
+    newValue?: ColumnConfig[]
+  ) {
+    let result = false;
+    if (!oldValue) {
+      return true;
+    }
+    oldValue?.forEach((column, index) => {
+      if (column.sortDirection !== newValue?.[index]?.sortDirection) {
+        result = true;
+      }
+      if (column.sortIndex !== newValue?.[index]?.sortIndex) {
+        result = true;
+      }
+    });
+    return result;
+  }
+
   public set columnConfig(value: ColumnConfig[] | undefined) {
+    const doesRequireFullUpdate = this.doesRequireFullUpdate(
+      this._columnConfig,
+      value
+    );
     this._columnConfig = value;
     this.calculateColumnWidths(value || []);
+    if (doesRequireFullUpdate) {
+      this.calculateFastSortScheme();
+      const { openIndizes, rows } = this.caculateData(this.data || []);
+      this.expandedIndizes = openIndizes;
+      this.calculatedData = rows;
+    }
     this.redraw();
   }
 
@@ -275,12 +335,9 @@ export class BaseGrid {
   public get options(): GridOptions {
     return this._options;
   }
-  public set options(value: DeepPartial<GridOptions> | undefined) {
-    if (value) {
-      this._options = merge(this._defaultOptions, value);
-    } else {
-      this._options = this._defaultOptions;
-    }
+  public set options(value: GridOptions) {
+    this._options = value;
+
     const { openIndizes, rows } = this.caculateData(this.data || []);
     this.expandedIndizes = openIndizes;
     this.calculatedData = rows;

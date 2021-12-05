@@ -11,7 +11,7 @@ export class GridStub {
   public readonly rowHeight = 32;
   private _data: any[] | undefined;
   private _columnConfig?: ColumnConfig[] | undefined;
-  private _options?: DeepPartial<GridOptions> | undefined;
+  private _options: GridOptions;
   private _width: number = 0;
   private _height: number = 0;
   private _left: number = 0;
@@ -19,11 +19,11 @@ export class GridStub {
 
   public nextWorker = 0;
 
-  constructor(canvases: HTMLCanvasElement[]) {
+  constructor(canvases: HTMLCanvasElement[], options: GridOptions) {
     const offscreens = canvases.map((canvas) =>
       (canvas as any).transferControlToOffscreen()
     );
-
+    this._options = options;
     workers.forEach((worker, index) => {
       worker.addEventListener("message", (message) => {
         if (message.data === "ready") {
@@ -72,10 +72,10 @@ export class GridStub {
     });
   }
 
-  public get options(): DeepPartial<GridOptions> | undefined {
+  public get options(): GridOptions {
     return this._options;
   }
-  public set options(value: DeepPartial<GridOptions> | undefined) {
+  public set options(value: GridOptions) {
     this._options = value;
     workers[0].postMessage({
       type: "setOptions",

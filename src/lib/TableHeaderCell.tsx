@@ -12,7 +12,8 @@ export function TableHeaderCell(props: {
   column: ColumnConfig;
   title: string;
   options?: DeepPartial<GridOptions>;
-  onClick?(column: ColumnConfig): void;
+  hasMoreThanOneSortIndex?: boolean;
+  onClick?(e: React.MouseEvent, column: ColumnConfig): void;
 }) {
   const {
     attributes,
@@ -34,15 +35,17 @@ export function TableHeaderCell(props: {
     color: isDragging
       ? props.options?.theme?.palette?.headerTextColorDragging
       : props.options?.theme?.palette?.headerTextColor,
-    zIndex: isDragging ? 10000000 : 100,
     fontSize: 14,
     fontWeight: "bold",
     transition,
   };
 
-  const handleClick = useCallback(() => {
-    props.onClick?.(props.column);
-  }, [props.column, props.onClick]);
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      props.onClick?.(e, props.column);
+    },
+    [props.column, props.onClick]
+  );
 
   return (
     <div
@@ -61,9 +64,40 @@ export function TableHeaderCell(props: {
           height: "100%",
           paddingLeft: 8,
           userSelect: "none",
+          paddingRight: 8,
         }}
       >
         <span>{props.id}</span>
+        <div style={{ flex: 1 }} />
+        {props.column.sortIndex !== undefined &&
+          (props.column.sortDirection === "asc" ||
+            props.column.sortDirection === undefined) && (
+            <div
+              style={{
+                width: 0,
+                height: 0,
+                borderLeft: "5px solid transparent",
+                borderRight: "5px solid transparent",
+                borderTop: `5px solid black`,
+              }}
+            />
+          )}
+        {props.column.sortIndex !== undefined &&
+          props.column.sortDirection === "desc" && (
+            <div
+              style={{
+                width: 0,
+                height: 0,
+                borderLeft: "5px solid transparent",
+                borderRight: "5px solid transparent",
+                borderBottom: `5px solid black`,
+              }}
+            />
+          )}
+        {props.hasMoreThanOneSortIndex &&
+          props.column.sortIndex !== undefined && (
+            <span style={{ marginLeft: 4 }}>{props.column.sortIndex + 1}</span>
+          )}
       </div>
     </div>
   );

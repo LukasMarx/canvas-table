@@ -16,7 +16,7 @@ export interface WorkerInitMessage {
   canvas: HTMLCanvasElement;
   data?: any[];
   columns?: ColumnConfig[];
-  gridOptions?: DeepPartial<GridOptions>;
+  gridOptions: GridOptions;
 }
 
 export interface WorkerSetDataMessage {
@@ -30,7 +30,7 @@ export interface WorkerSetColumnsMessage {
 }
 export interface WorkerSetOptionsMessage {
   type: "setOptions";
-  options?: DeepPartial<GridOptions>;
+  options: GridOptions;
 }
 
 export interface WorkerRedrawMessage {

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { ComponentStory, ComponentMeta } from "@storybook/react";
 import example from "../generated.json";
 
@@ -135,7 +135,7 @@ const columnConfigSorted = [
 ] as ColumnConfig[];
 
 export default {
-  title: "Table",
+  title: "Tree",
   component: Table,
   argTypes: {
     data: {
@@ -151,42 +151,33 @@ export default {
   },
 } as ComponentMeta<typeof Table>;
 
-const Template: ComponentStory<typeof Table> = (args) => (
-  <div style={{ height: 500 }}>
-    <Table {...args} />
-  </div>
-);
+const Template: ComponentStory<typeof Table> = (args) => {
+  const [columnConfig, setColumnConfig] =
+    useState<ColumnConfig[]>(columnConfigSorted);
+  return (
+    <div style={{ height: 500 }}>
+      <Table
+        {...args}
+        columns={columnConfig}
+        onColumnsChange={setColumnConfig}
+      />
+    </div>
+  );
+};
 
 export const Basic = Template.bind({});
 Basic.args = {
   data: example as any[],
   columns: columnConfig,
-};
-
-export const DarkTheme = Template.bind({});
-DarkTheme.args = {
-  data: example as any[],
-  columns: columnConfig,
   options: {
-    theme: {
-      font: {
-        size: 14,
-      },
-      palette: {
-        backgroundColor: "#121212",
-        backgroundColorSelected: "#616161",
-        headerBackgroundColor: "#121212",
-        headerTextColor: "#fff",
-        textColor: "#fff",
-        textColorSelected: "#fff",
-        lineColor: "#212121",
-      },
-    },
+    dataTree: true,
   },
 };
 
 export const MultiSort = Template.bind({});
 MultiSort.args = {
   data: example as any[],
-  columns: columnConfigSorted,
+  options: {
+    dataTree: true,
+  },
 };

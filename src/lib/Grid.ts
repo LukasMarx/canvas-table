@@ -13,7 +13,6 @@ const emptyFormatterParams = {};
 export class Grid extends BaseGrid {
   public readonly headerHeight = 48;
   public caches: HTMLCanvasElement[] = [];
-  private formatters: Record<string, IFormatter<any>> = {};
   constructor(
     private ctx: CanvasRenderingContext2D,
     canvasElement: HTMLCanvasElement,
@@ -23,7 +22,7 @@ export class Grid extends BaseGrid {
         new (): IFormatter<any>;
       }
     >,
-    gridOptions?: DeepPartial<GridOptions>
+    gridOptions: GridOptions
   ) {
     super(gridOptions);
     this.canvas = canvasElement;

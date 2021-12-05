@@ -5,4 +5,6 @@ export interface ColumnConfig {
   formatter?: string;
   width?: number;
   formatterParams?: IFormatterParams;
+  sortIndex?: number;
+  sortDirection?: "asc" | "desc";
 }
