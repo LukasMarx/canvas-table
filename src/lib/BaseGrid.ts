@@ -298,6 +298,7 @@ export class BaseGrid {
       const { openIndizes, rows } = this.caculateData(this.data || []);
       this.expandedIndizes = openIndizes;
       this.calculatedData = rows;
+      this.calculateSelection();
     }
     this.redraw();
   }
