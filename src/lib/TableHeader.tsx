@@ -29,6 +29,8 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { DeepPartial } from "./types/DeepPartial";
+import { GridOptions } from "./types/Grid";
 
 interface TableHeaderProps {
   columns?: ColumnConfig[];
@@ -37,6 +39,7 @@ interface TableHeaderProps {
   scrollLeft?: number;
   onColumnsChange?(columns: ColumnConfig[]): void;
   onClick?(column: ColumnConfig): void;
+  options?: DeepPartial<GridOptions>;
 }
 
 const ratio = 2;
@@ -152,7 +155,13 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
   return (
     <div
       ref={outerRef as any}
-      style={{ width: "100%", height: headerHeight, position: "relative" }}
+      style={{
+        width: "100%",
+        height: headerHeight,
+        position: "relative",
+        backgroundColor: props.options?.theme?.palette?.headerBackgroundColor,
+        color: props.options?.theme?.palette?.headerTextColor,
+      }}
     >
       <div
         style={{
@@ -188,6 +197,7 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
                       width={column.width}
                       onClick={props.onClick}
                       column={column}
+                      options={props.options}
                     ></TableHeaderCell>
                   );
                 })}

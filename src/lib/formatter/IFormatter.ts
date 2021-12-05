@@ -1,12 +1,17 @@
+import { GridOptions } from "../types/Grid";
+
 export interface IFormatterParams {
   alignHorizontal?: "left" | "center" | "right" | "start" | "end";
+}
+export interface IFormatterContext {
+  gridOptions: GridOptions;
 }
 
 export interface IFormatter<T> {
   toText(
     value: T,
     params: IFormatterParams,
-    context: Record<string, any>
+    context: IFormatterContext
   ): string;
   formatTableCell(
     ctx: CanvasRenderingContext2D,
@@ -16,6 +21,6 @@ export interface IFormatter<T> {
     width: number,
     rowHeight: number,
     params: IFormatterParams,
-    context: Record<string, any>
+    context: IFormatterContext
   ): void;
 }

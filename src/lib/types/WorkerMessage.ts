@@ -1,4 +1,6 @@
 import { ColumnConfig } from "./ColumnConfig";
+import { DeepPartial } from "./DeepPartial";
+import { GridOptions } from "./Grid";
 
 export type WorkerMessage =
   | WorkerInitMessage
@@ -6,6 +8,7 @@ export type WorkerMessage =
   | WorkerSetDimensionMessage
   | WorkerSetScrollPositionMessage
   | WorkerOnClickMessage
+  | WorkerSetOptionsMessage
   | WorkerSetColumnsMessage;
 
 export interface WorkerInitMessage {
@@ -13,6 +16,7 @@ export interface WorkerInitMessage {
   canvas: HTMLCanvasElement;
   data?: any[];
   columns?: ColumnConfig[];
+  gridOptions?: DeepPartial<GridOptions>;
 }
 
 export interface WorkerSetDataMessage {
@@ -23,6 +27,10 @@ export interface WorkerSetDataMessage {
 export interface WorkerSetColumnsMessage {
   type: "setColumns";
   columns: any[];
+}
+export interface WorkerSetOptionsMessage {
+  type: "setOptions";
+  options?: DeepPartial<GridOptions>;
 }
 
 export interface WorkerRedrawMessage {

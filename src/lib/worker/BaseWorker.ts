@@ -30,7 +30,7 @@ export function initializeWorker(
       if (evt.data.type === "init") {
         const canvas = evt.data.canvas;
         const ctx = canvas.getContext("2d", { alpha: true })!;
-        grid = new Grid(ctx, canvas, formatters);
+        grid = new Grid(ctx, canvas, formatters, evt.data.gridOptions);
         grid.onHeightChange = (height: number) => {
           self.postMessage({ type: "heightChange", height: height });
         };
@@ -47,6 +47,12 @@ export function initializeWorker(
         const columns = evt.data.columns;
         if (grid) {
           grid.columnConfig = columns;
+        }
+      }
+      if (evt.data.type === "setOptions") {
+        const options = evt.data.options;
+        if (grid) {
+          grid.options = options;
         }
       }
       if (evt.data.type === "setData") {

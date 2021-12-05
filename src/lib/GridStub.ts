@@ -1,5 +1,7 @@
 import { IFormatter } from "./formatter/IFormatter";
 import { ColumnConfig } from "./types/ColumnConfig";
+import { DeepPartial } from "./types/DeepPartial";
+import { GridOptions } from "./types/Grid";
 import { debounce, throttle } from "./utils/Util";
 import Worker from "./worker/Worker?worker";
 
@@ -9,6 +11,7 @@ export class GridStub {
   public readonly rowHeight = 32;
   private _data: any[] | undefined;
   private _columnConfig?: ColumnConfig[] | undefined;
+  private _options?: DeepPartial<GridOptions> | undefined;
   private _width: number = 0;
   private _height: number = 0;
   private _left: number = 0;
@@ -30,6 +33,7 @@ export class GridStub {
               canvas: offscreens[index],
               data: this.data,
               columns: this.columnConfig,
+              gridOptions: this.options,
             },
             [offscreens[index] as any]
           );
@@ -65,6 +69,21 @@ export class GridStub {
     workers[1].postMessage({
       type: "setData",
       data: data,
+    });
+  }
+
+  public get options(): DeepPartial<GridOptions> | undefined {
+    return this._options;
+  }
+  public set options(value: DeepPartial<GridOptions> | undefined) {
+    this._options = value;
+    workers[0].postMessage({
+      type: "setOptions",
+      options: value,
+    });
+    workers[1].postMessage({
+      type: "setOptions",
+      options: value,
     });
   }
 

@@ -83,4 +83,33 @@ export const Basic = Template.bind({});
 Basic.args = {
   data: example as any[],
   columns: columnConfig,
+  options: {
+    theme: {
+      font: {
+        size: 14,
+      },
+    },
+  },
+};
+
+export const DarkTheme = Template.bind({});
+DarkTheme.args = {
+  data: example as any[],
+  columns: columnConfig,
+  options: {
+    theme: {
+      font: {
+        size: 14,
+      },
+      palette: {
+        backgroundColor: "#121212",
+        backgroundColorSelected: "#616161",
+        headerBackgroundColor: "#121212",
+        headerTextColor: "#fff",
+        textColor: "#fff",
+        textColorSelected: "#fff",
+        lineColor: "#212121",
+      },
+    },
+  },
 };

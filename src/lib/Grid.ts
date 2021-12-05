@@ -1,20 +1,17 @@
 import { BaseGrid } from "./BaseGrid";
 import { IFormatter } from "./formatter/IFormatter";
-import { StringFormatter } from "./formatter/StringFormatter";
 import { ColumnConfig } from "./types/ColumnConfig";
+import { DeepPartial } from "./types/DeepPartial";
 import { RowClickEvent } from "./types/Events";
+import { GridOptions } from "./types/Grid";
 import { calculateColumnWidths, debounce, throttle } from "./utils/Util";
 
-const stringFormatter = new StringFormatter();
-
-const ratio = 4;
+const ratio = 2;
 
 const emptyFormatterParams = {};
-const emptyContext = {};
 
 export class Grid extends BaseGrid {
   public readonly headerHeight = 48;
-  public readonly cellPadding = 8;
   public caches: HTMLCanvasElement[] = [];
   private formatters: Record<string, IFormatter<any>> = {};
   constructor(
@@ -25,9 +22,10 @@ export class Grid extends BaseGrid {
       {
         new (): IFormatter<any>;
       }
-    >
+    >,
+    gridOptions?: DeepPartial<GridOptions>
   ) {
-    super();
+    super(gridOptions);
     this.canvas = canvasElement;
     this.calculateColumnWidths(this.columnConfig || []);
     Object.entries(formatters).forEach(([key, formatter]) => {
@@ -123,6 +121,7 @@ export class Grid extends BaseGrid {
       firstIndex + Math.floor(this.height / ratio / this.rowHeight);
     const activeData = this.calculatedData?.slice(firstIndex, lastIndex + 1);
     this.ctx.beginPath();
+    this.ctx.strokeStyle = this.options.theme.palette.lineColor;
     activeData?.forEach((datapoint, index) => {
       const offsetTop = this.scrollTop % this.rowHeight;
       const y = Math.floor(index * this.rowHeight - offsetTop);
@@ -146,10 +145,21 @@ export class Grid extends BaseGrid {
 
   drawRowDelimiter(y: number) {
     this.ctx.moveTo(0, y);
-    this.ctx.strokeStyle = this.textColor;
-    this.ctx.fillStyle = this.textColor;
     this.ctx.lineWidth = 0.5;
     this.ctx.lineTo(this.width, y);
+  }
+
+  resetFont(ctx: CanvasRenderingContext2D) {
+    const fontWeight = this.options?.theme?.font?.weight;
+    const fontSize = this.options.theme?.font?.size + "px";
+    const fontVariant = this.options.theme?.font?.variant;
+    const fontStyle = this.options.theme?.font?.style;
+    const fontFamiliy = this.options.theme?.font?.familiy;
+
+    const font = `${fontStyle} ${fontVariant} ${fontWeight} ${fontSize} ${fontFamiliy}`;
+    if (ctx.font !== font) {
+      ctx.font = font;
+    }
   }
 
   drawRow(absoluteIndex: number, y: number) {
@@ -168,18 +178,21 @@ export class Grid extends BaseGrid {
     const treeControlWidth = 25;
     const treeBranchWidth = 25;
 
-    if (hasChildren) {
+    const paddingLeft = this.options.theme.spacing.cellPaddingLeft;
+    const paddingRight = this.options.theme.spacing.cellPaddingLeft;
+    if (this.options.dataTree && hasChildren) {
       this.drawTreeControl(
         this.expandedIndizes[absoluteIndex],
-        this.cellPadding - this.scrollLeft + level * treeControlWidth,
+        paddingLeft - this.scrollLeft + level * treeControlWidth,
         y
       );
     }
-    const offsetLeft = hasChildren
-      ? (level + 1) * treeControlWidth
-      : level * treeBranchWidth;
+    const offsetLeft =
+      this.options.dataTree && hasChildren
+        ? (level + 1) * treeControlWidth
+        : level * treeBranchWidth;
 
-    if (!hasChildren || level > 0) {
+    if (this.options.dataTree && (!hasChildren || level > 0)) {
       this.drawTreeBranch(-12 - this.scrollLeft + level * treeControlWidth, y);
     }
 
@@ -195,21 +208,21 @@ export class Grid extends BaseGrid {
           index === 0 ? x + offsetLeft : x,
           y,
           index === 0
-            ? this.columnWidths[index] - this.cellPadding - offsetLeft
-            : this.columnWidths[index] - this.cellPadding,
+            ? this.columnWidths[index] - offsetLeft
+            : this.columnWidths[index],
           this.rowHeight
         );
         this.ctx.clip();
         this.ctx.beginPath();
-        this.ctx.font = "normal 14px sans-serif";
+        this.resetFont(this.ctx);
         this.drawCell(
           this.calculatedData?.[absoluteIndex]?.data?.[column.field],
           column,
           y,
           index === 0 ? x + offsetLeft : x,
           index === 0
-            ? this.columnWidths[index] - this.cellPadding - offsetLeft
-            : this.columnWidths[index] - this.cellPadding
+            ? this.columnWidths[index] - paddingRight - offsetLeft
+            : this.columnWidths[index] - paddingRight
         );
         this.ctx.closePath();
         this.ctx.restore();
@@ -267,7 +280,7 @@ export class Grid extends BaseGrid {
       width,
       rowHeight || this.rowHeight,
       column.formatterParams || emptyFormatterParams,
-      emptyContext
+      { gridOptions: this.options }
     );
   }
 }

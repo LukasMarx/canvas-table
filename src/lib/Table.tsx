@@ -3,27 +3,27 @@ import React, {
   ReactElement,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { Grid } from "./Grid";
-import { useCanvas } from "./hooks/useCanvas";
 import useResizeObserver from "use-resize-observer";
 import { ColumnConfig } from "./types/ColumnConfig";
 import { TableHeader } from "./TableHeader";
 import { calculateColumnWidths, debounce } from "./utils/Util";
 import { GridStub } from "./GridStub";
-import { IFormatter } from "./formatter/IFormatter";
+import { GridOptions } from "./types/Grid";
+import { DeepPartial } from "./types/DeepPartial";
+import "./Table.css";
 
 interface TableProps {
   data: any[];
   columns?: ColumnConfig[];
   onColumnsChange?(columns: ColumnConfig[]): void;
+  options?: DeepPartial<GridOptions>;
 }
 
-let ratio = 4;
+let ratio = 2;
 
 export function Table(props: TableProps): ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -97,6 +97,7 @@ export function Table(props: TableProps): ReactElement {
   useEffect(() => {
     if (!gridRef.current && canvasRef.current) {
       const newGrid = new GridStub([canvasRef.current, canvasRef2.current!]);
+      newGrid.options = props.options;
       newGrid.onHeightChange = (height: number) => {
         setDataHeight(height);
       };
@@ -114,6 +115,12 @@ export function Table(props: TableProps): ReactElement {
       grid.data = props.data;
     }
   }, [grid, props.data]);
+
+  useEffect(() => {
+    if (props.options && grid) {
+      grid.options = props.options;
+    }
+  }, [grid, props.options]);
 
   useEffect(() => {
     if (grid) {
@@ -167,6 +174,7 @@ export function Table(props: TableProps): ReactElement {
         columns={props.columns}
         scrollLeft={left}
         onColumnsChange={handleColumnsChange}
+        options={props.options}
       />
       <div
         ref={fakeScroll as any}
@@ -182,6 +190,8 @@ export function Table(props: TableProps): ReactElement {
           style={{
             position: "absolute",
             pointerEvents: "none",
+            backgroundColor: props.options?.theme?.palette?.backgroundColor,
+            color: props.options?.theme?.palette?.textColor,
           }}
         >
           <canvas

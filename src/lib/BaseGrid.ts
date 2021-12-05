@@ -1,6 +1,9 @@
 import { ColumnConfig } from "./types/ColumnConfig";
 import { CellClickEvent, RowClickEvent } from "./types/Events";
 import { v4 } from "uuid";
+import { GridOptions } from "./types/Grid";
+import merge from "lodash.merge";
+import { DeepPartial } from "./types/DeepPartial";
 
 export class BaseGrid {
   protected canvas: any;
@@ -11,17 +14,55 @@ export class BaseGrid {
   private _scrollTop = 0;
   private _scrollLeft = 0;
   private _columnConfig?: ColumnConfig[] | undefined;
-  private _textColor: string = "#4e4e4e";
-  private _backgroundColor: string = "#fff";
-  private _backgroundColorSelection: string = "#eee";
+
   private _selectionKeys: Record<string, boolean> = {};
   private _selectionIndizes: Record<number, boolean> = {};
   private _selectionData: any[] = [];
   private _expandedKeys: Record<string, boolean> = {};
   private _expandedIndizes: Record<number, boolean> = {};
   private _calculatedData: { level: number; data: any }[] = [];
+  private _options: GridOptions;
+  protected _defaultOptions: GridOptions = {
+    theme: {
+      font: {
+        familiy: "sans-serif",
+        size: 14,
+        weight: "normal",
+        style: "normal",
+        variant: "normal",
+      },
+      palette: {
+        textColor: "#212121",
+        textColorSelected: "#212121",
+        backgroundColor: "#fff",
+        backgroundColorSelected: "#eee",
+        headerBackgroundColor: "#fff",
+        headerBackgroundColorDragging: "#eee",
+        headerTextColor: "#fff",
+        headerTextColorDragging: "#fff",
+        lineColor: "#212121",
+      },
+      spacing: {
+        cellPaddingLeft: 8,
+        cellPaddingRight: 8,
+      },
+    },
+    rowHeight: 32,
+  };
 
   private _blockRedraw = false;
+
+  constructor(gridOptions?: DeepPartial<GridOptions>) {
+    if (gridOptions) {
+      this._options = merge(this._defaultOptions, gridOptions);
+    } else {
+      this._options = this._defaultOptions;
+    }
+  }
+
+  public get rowHeight() {
+    return this.options?.rowHeight || this._rowHeight;
+  }
 
   public get blockRedraw() {
     return this._blockRedraw;
@@ -175,27 +216,19 @@ export class BaseGrid {
   }
 
   public get backgroundColorSelection(): string {
-    return this._backgroundColorSelection;
-  }
-  public set backgroundColorSelection(value: string) {
-    this._backgroundColorSelection = value;
-    this.redraw();
+    return this.options.theme?.palette?.backgroundColorSelected!;
   }
 
   public get backgroundColor(): string {
-    return this._backgroundColor;
-  }
-  public set backgroundColor(value: string) {
-    this._backgroundColor = value;
-    this.redraw();
+    return this.options.theme?.palette?.backgroundColor!;
   }
 
   public get textColor(): string {
-    return this._textColor;
+    return this.options.theme?.palette?.textColor!;
   }
-  public set textColor(value: string) {
-    this._textColor = value;
-    this.redraw();
+
+  public get textColorSelected(): string {
+    return this.options.theme?.palette?.textColorSelected!;
   }
 
   protected columnWidths: number[] = [];
@@ -239,13 +272,21 @@ export class BaseGrid {
     return this._data;
   }
 
-  set rowHeight(rowHeight: number) {
-    this._rowHeight = rowHeight;
-    this.redraw();
+  public get options(): GridOptions {
+    return this._options;
   }
-
-  get rowHeight(): number {
-    return this._rowHeight;
+  public set options(value: DeepPartial<GridOptions> | undefined) {
+    if (value) {
+      this._options = merge(this._defaultOptions, value);
+    } else {
+      this._options = this._defaultOptions;
+    }
+    const { openIndizes, rows } = this.caculateData(this.data || []);
+    this.expandedIndizes = openIndizes;
+    this.calculatedData = rows;
+    this.calculateSelection();
+    this.onHeightChange(this.calculatedData.length * this.rowHeight);
+    this.redraw();
   }
 
   public get expandedKeys(): Record<string, boolean> {

@@ -2,6 +2,8 @@ import React, { useCallback } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ColumnConfig } from "./types/ColumnConfig";
+import { DeepPartial } from "./types/DeepPartial";
+import { GridOptions } from "./types/Grid";
 
 export function TableHeaderCell(props: {
   id: string;
@@ -9,6 +11,7 @@ export function TableHeaderCell(props: {
   height: number;
   column: ColumnConfig;
   title: string;
+  options?: DeepPartial<GridOptions>;
   onClick?(column: ColumnConfig): void;
 }) {
   const {
@@ -25,7 +28,12 @@ export function TableHeaderCell(props: {
     width: props.width,
     height: props.height,
     display: "inline-block",
-    backgroundColor: isDragging ? "#e4e4e4" : "#fff",
+    backgroundColor: isDragging
+      ? props.options?.theme?.palette?.headerBackgroundColorDragging
+      : props.options?.theme?.palette?.headerBackgroundColor,
+    color: isDragging
+      ? props.options?.theme?.palette?.headerTextColorDragging
+      : props.options?.theme?.palette?.headerTextColor,
     zIndex: isDragging ? 10000000 : 100,
     fontSize: 14,
     fontWeight: "bold",
