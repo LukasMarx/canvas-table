@@ -71,7 +71,7 @@ export function TableHeaderCell(props: {
       >
         <span>{props.id}</span>
         <div style={{ flex: 1 }} />
-        {props.column.pinned && <img src={locked} />}
+        {props.column.pinned && <img src={locked} width={16} height={16} />}
         {props.column.sortIndex !== undefined &&
           (props.column.sortDirection === "asc" ||
             props.column.sortDirection === undefined) && (
