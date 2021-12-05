@@ -7,4 +7,5 @@ export interface ColumnConfig {
   formatterParams?: IFormatterParams;
   sortIndex?: number;
   sortDirection?: "asc" | "desc";
+  pinned?: boolean;
 }

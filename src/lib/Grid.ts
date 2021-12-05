@@ -136,6 +136,19 @@ export class Grid extends BaseGrid {
 
       this.drawRow(firstIndex + index, y);
     });
+    this.ctx.closePath();
+    this.ctx.beginPath();
+    const pinnedColumnDelimiterX = this.columnConfig.reduce((prev, current) => {
+      if (current.pinned) {
+        return prev + (current.width || 0);
+      }
+      return prev;
+    }, 0);
+    if (pinnedColumnDelimiterX) {
+      this.drawPinnedColumnDelimiter(pinnedColumnDelimiterX);
+    }
+    this.ctx.stroke();
+    this.ctx.closePath();
   }
 
   public calculateColumnWidths(columns: ColumnConfig[]) {
@@ -146,6 +159,12 @@ export class Grid extends BaseGrid {
     this.ctx.moveTo(0, y);
     this.ctx.lineWidth = 0.5;
     this.ctx.lineTo(this.width, y);
+  }
+
+  drawPinnedColumnDelimiter(x: number) {
+    this.ctx.moveTo(x, 0);
+    this.ctx.lineWidth = 0.5;
+    this.ctx.lineTo(x, this.height);
   }
 
   resetFont(ctx: CanvasRenderingContext2D) {
@@ -173,7 +192,6 @@ export class Grid extends BaseGrid {
     const level = this.calculatedData[absoluteIndex].level;
     const hasChildren = row.children && row.children.length > 0;
 
-    let x = 0 - this.scrollLeft;
     const treeControlWidth = 25;
     const treeBranchWidth = 25;
 
@@ -195,7 +213,44 @@ export class Grid extends BaseGrid {
       this.drawTreeBranch(-12 - this.scrollLeft + level * treeControlWidth, y);
     }
 
+    // draw a second time for frozen columns
+    let pinnedColumnOffset = 0;
     this.columnConfig?.forEach((column, index) => {
+      if (column.pinned) {
+        const ratioWidth = this.width / ratio;
+
+        this.ctx.save();
+        this.ctx.rect(
+          index === 0 ? pinnedColumnOffset + offsetLeft : pinnedColumnOffset,
+          y,
+          index === 0
+            ? this.columnWidths[index] - offsetLeft
+            : this.columnWidths[index],
+          this.rowHeight
+        );
+        this.ctx.clip();
+        this.ctx.beginPath();
+        this.resetFont(this.ctx);
+        this.drawCell(
+          this.calculatedData?.[absoluteIndex]?.data?.[column.field],
+          column,
+          y,
+          index === 0 ? pinnedColumnOffset + offsetLeft : pinnedColumnOffset,
+          index === 0
+            ? this.columnWidths[index] - paddingRight - offsetLeft
+            : this.columnWidths[index] - paddingRight
+        );
+        this.ctx.closePath();
+        this.ctx.restore();
+        pinnedColumnOffset += this.columnWidths[index];
+      }
+    });
+
+    let x = 0 - this.scrollLeft + pinnedColumnOffset;
+    this.columnConfig?.forEach((column, index) => {
+      if (column.pinned) {
+        return;
+      }
       const ratioWidth = this.width / ratio;
       if (
         (x >= 0 && x <= ratioWidth) ||
@@ -203,8 +258,13 @@ export class Grid extends BaseGrid {
           x + this.columnWidths[index] <= ratioWidth)
       ) {
         this.ctx.save();
+
+        let clipx = index === 0 ? x + offsetLeft : x;
+        if (clipx < pinnedColumnOffset) {
+          clipx = pinnedColumnOffset;
+        }
         this.ctx.rect(
-          index === 0 ? x + offsetLeft : x,
+          clipx,
           y,
           index === 0
             ? this.columnWidths[index] - offsetLeft
@@ -228,7 +288,6 @@ export class Grid extends BaseGrid {
       }
       x += this.columnWidths[index];
     });
-    this.ctx.stroke();
   }
 
   drawTreeControl(open: boolean, x: number, rowTop: any) {

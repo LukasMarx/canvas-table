@@ -18,6 +18,15 @@ export function calculateColumnWidths(
   }
 
   const widths = [];
+  // for (const column of columns) {
+  //   if (column.pinned) {
+  //     if (column.width != null) {
+  //       widths.push(Math.floor(column.width));
+  //     } else {
+  //       widths.push(Math.floor(distributeableSpace / numOfRelativeColumns));
+  //     }
+  //   }
+  // }
   for (const column of columns) {
     if (column.width != null) {
       widths.push(Math.floor(column.width));

@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import useResizeObserver from "use-resize-observer";
 import { ColumnConfig } from "./types/ColumnConfig";
-import { TableHeader } from "./TableHeader";
+import { TableHeader } from "./components/table-header/TableHeader";
 import { calculateColumnWidths, debounce } from "./utils/Util";
 import { GridStub } from "./GridStub";
 import { GridOptions } from "./types/Grid";
@@ -235,7 +235,7 @@ export function Table(props: TableProps): ReactElement {
         columns={props.columns}
         scrollLeft={left}
         onColumnsChange={handleColumnsChange}
-        options={props.options}
+        options={options}
         onClick={handleTableHeaderClick}
       />
       <div
@@ -252,8 +252,8 @@ export function Table(props: TableProps): ReactElement {
           style={{
             position: "absolute",
             pointerEvents: "none",
-            backgroundColor: props.options?.theme?.palette?.backgroundColor,
-            color: props.options?.theme?.palette?.textColor,
+            backgroundColor: options?.theme?.palette?.backgroundColor,
+            color: options?.theme?.palette?.textColor,
           }}
         >
           <canvas

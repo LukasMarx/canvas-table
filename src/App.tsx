@@ -10,6 +10,7 @@ function App() {
     {
       field: "name",
       width: 150,
+      pinned: true,
     },
     {
       field: "index",
@@ -18,6 +19,7 @@ function App() {
     {
       field: "guid",
       width: 300,
+      pinned: true,
     },
 
     {
@@ -38,6 +40,7 @@ function App() {
       formatterParams: {
         alignHorizontal: "left",
       },
+      pinned: true,
     },
     {
       field: "eyeColor",

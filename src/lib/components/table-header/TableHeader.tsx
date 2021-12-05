@@ -8,9 +8,9 @@ import React, {
   useState,
 } from "react";
 import useResizeObserver from "use-resize-observer";
-import { StringFormatter } from "./formatter/StringFormatter";
-import { ColumnConfig } from "./types/ColumnConfig";
-import { calculateColumnWidths, throttle } from "./utils/Util";
+import { StringFormatter } from "../../formatter/StringFormatter";
+import { ColumnConfig } from "../../types/ColumnConfig";
+import { calculateColumnWidths, throttle } from "../../utils/Util";
 import {
   arrayMove,
   horizontalListSortingStrategy,
@@ -18,7 +18,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 
-import "./Table.css";
+import "../../Table.css";
 import { TableHeaderCell } from "./TableHeaderCell";
 import {
   DndContext,
@@ -29,8 +29,9 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { DeepPartial } from "./types/DeepPartial";
-import { GridOptions } from "./types/Grid";
+import { DeepPartial } from "../../types/DeepPartial";
+import { GridOptions } from "../../types/Grid";
+import { TableHeaderResizeOverlay } from "./TableHeaderResizeOverlay";
 
 interface TableHeaderProps {
   columns?: ColumnConfig[];
@@ -54,7 +55,7 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
     ref: outerRef as any,
   });
   const columnConfigRef = useRef<ColumnConfig[]>();
-  const columnConfig = useMemo(() => {
+  const columnConfig = useMemo<ColumnConfig[]>(() => {
     if (props.columns) {
       const columns = calculateColumnWidths(props.columns, width, ratio);
       const columnConfig = props.columns
@@ -62,6 +63,15 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
         : [];
       columnConfig?.forEach((column: any, index: number) => {
         column.width = columns[index];
+      });
+      columnConfig.sort((a: ColumnConfig, b: ColumnConfig) => {
+        if (a.pinned && !b.pinned) {
+          return -1;
+        }
+        if (!a.pinned && b.pinned) {
+          return 1;
+        }
+        return 0;
       });
       columnConfigRef.current = columnConfig;
       return columnConfig;
@@ -88,56 +98,11 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
     [props.columns, props.onColumnsChange]
   );
 
-  const resizeIndex = useRef<number>();
-  const resizeColumn = useRef<ColumnConfig>();
-  const resizeColumnLeft = useRef<number>();
   const scrollLeftRef = useRef<number>();
 
-  const onColumnsChangeRef = useRef<typeof props.onColumnsChange>();
-  useLayoutEffect(() => {
-    onColumnsChangeRef.current = props.onColumnsChange;
-  }, [props.onColumnsChange]);
   useLayoutEffect(() => {
     scrollLeftRef.current = props.scrollLeft;
   }, [props.scrollLeft]);
-
-  const handleResizeMouseMove = useRef(
-    throttle((e: MouseEvent) => {
-      const relativeMousePositionX =
-        e.clientX -
-        (outerRef.current?.offsetLeft || 0) +
-        (scrollLeftRef.current || 0);
-      const difference =
-        relativeMousePositionX - (resizeColumnLeft.current || 0);
-      const newColumnConfig = [...(columnConfigRef.current || [])];
-      newColumnConfig[resizeIndex.current!].width = difference;
-      onColumnsChangeRef.current?.(newColumnConfig);
-    }, 16)
-  );
-
-  const handleResizeMouseDown = useRef(
-    (column: ColumnConfig, index: number) => {
-      resizeIndex.current = index;
-      resizeColumn.current = column;
-      resizeColumnLeft.current = 0;
-      let i = 0;
-      for (const column of columnConfigRef.current || []) {
-        if (i === index) {
-          break;
-        }
-        resizeColumnLeft.current += column.width || 0;
-        i += 1;
-      }
-      window.removeEventListener("mousemove", handleResizeMouseMove.current);
-      window.addEventListener("mousemove", handleResizeMouseMove.current);
-    }
-  );
-
-  useEffect(() => {
-    window.addEventListener("mouseup", () => {
-      window.removeEventListener("mousemove", handleResizeMouseMove.current);
-    });
-  }, []);
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -204,6 +169,7 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
                       onClick={props.onClick}
                       column={column}
                       options={props.options}
+                      disabled={column.pinned}
                       hasMoreThanOneSortIndex={hasMoreThanOneSortIndex}
                     ></TableHeaderCell>
                   );
@@ -212,6 +178,13 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
             </DndContext>
           )}
         </div>
+        <TableHeaderResizeOverlay
+          absolteColumnConfig={columnConfig}
+          onColumnsChange={props.onColumnsChange}
+          height={headerHeight}
+          scrollLeft={props.scrollLeft || 0}
+          offsetLeft={outerRef.current?.offsetLeft || 0}
+        />
         <div
           style={{
             position: "absolute",
@@ -228,40 +201,36 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
               float: "left",
               pointerEvents: "none",
               whiteSpace: "nowrap",
-              transform: `translateX(-${props.scrollLeft}px)`,
+              zIndex: 10000,
             }}
           >
-            {columnConfig?.map((column: any, index: number) => {
-              return (
-                <div
-                  key={column.field}
-                  style={{
-                    width: column.width,
-                    height: headerHeight,
-                    display: "inline-block",
-                    pointerEvents: "none",
-                    position: "relative",
-                  }}
-                >
-                  <div
-                    style={{
-                      position: "absolute",
-                      right: 0,
-                      width: 5,
-                      height: "100%",
-                      pointerEvents: "all",
-                      cursor: "ew-resize",
-                    }}
-                    onMouseDown={(e) =>
-                      handleResizeMouseDown.current(column, index)
-                    }
-                    onDragStart={(e) => e.preventDefault()}
-                  ></div>
-                </div>
-              );
-            })}
+            {columnConfig
+              ?.filter((col) => col.pinned)
+              .map((column: any, index: number) => {
+                return (
+                  <TableHeaderCell
+                    key={column.field}
+                    id={column.field}
+                    title={column.field}
+                    height={headerHeight}
+                    width={column.width}
+                    onClick={props.onClick}
+                    column={column}
+                    options={props.options}
+                    disabled
+                    hasMoreThanOneSortIndex={hasMoreThanOneSortIndex}
+                  ></TableHeaderCell>
+                );
+              })}
           </div>
         </div>
+        <TableHeaderResizeOverlay
+          absolteColumnConfig={columnConfig}
+          onColumnsChange={props.onColumnsChange}
+          height={headerHeight}
+          scrollLeft={0}
+          offsetLeft={outerRef.current?.offsetLeft || 0}
+        />
       </div>
     </div>
   );

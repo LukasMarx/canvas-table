@@ -16,8 +16,8 @@ export const defaultOptions: GridOptions = {
       backgroundColorSelected: "#eee",
       headerBackgroundColor: "#fff",
       headerBackgroundColorDragging: "#eee",
-      headerTextColor: "#fff",
-      headerTextColorDragging: "#fff",
+      headerTextColor: "#212121",
+      headerTextColorDragging: "#212121",
       lineColor: "#212121",
     },
     spacing: {

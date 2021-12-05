@@ -1,9 +1,10 @@
 import React, { useCallback } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ColumnConfig } from "./types/ColumnConfig";
-import { DeepPartial } from "./types/DeepPartial";
-import { GridOptions } from "./types/Grid";
+import { ColumnConfig } from "../../types/ColumnConfig";
+import { DeepPartial } from "../../types/DeepPartial";
+import { GridOptions } from "../../types/Grid";
+import locked from "../../assets/lock_black_24dp.svg";
 
 export function TableHeaderCell(props: {
   id: string;
@@ -13,6 +14,7 @@ export function TableHeaderCell(props: {
   title: string;
   options?: DeepPartial<GridOptions>;
   hasMoreThanOneSortIndex?: boolean;
+  disabled?: boolean;
   onClick?(e: React.MouseEvent, column: ColumnConfig): void;
 }) {
   const {
@@ -22,7 +24,7 @@ export function TableHeaderCell(props: {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: props.id });
+  } = useSortable({ id: props.id, disabled: props.disabled });
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -69,6 +71,7 @@ export function TableHeaderCell(props: {
       >
         <span>{props.id}</span>
         <div style={{ flex: 1 }} />
+        {props.column.pinned && <img src={locked} />}
         {props.column.sortIndex !== undefined &&
           (props.column.sortDirection === "asc" ||
             props.column.sortDirection === undefined) && (
@@ -94,6 +97,7 @@ export function TableHeaderCell(props: {
               }}
             />
           )}
+
         {props.hasMoreThanOneSortIndex &&
           props.column.sortIndex !== undefined && (
             <span style={{ marginLeft: 4 }}>{props.column.sortIndex + 1}</span>
