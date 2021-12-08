@@ -189,7 +189,7 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
           onColumnsChange={props.onColumnsChange}
           height={headerHeight}
           scrollLeft={props.scrollLeft || 0}
-          offsetLeft={outerRef.current?.offsetLeft || 0}
+          offsetLeft={outerRef.current?.getBoundingClientRect().x || 0}
         />
         <div
           style={{
@@ -235,7 +235,7 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
           onColumnsChange={props.onColumnsChange}
           height={headerHeight}
           scrollLeft={0}
-          offsetLeft={outerRef.current?.offsetLeft || 0}
+          offsetLeft={outerRef.current?.getBoundingClientRect().x || 0}
         />
       </div>
     </div>
