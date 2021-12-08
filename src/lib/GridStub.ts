@@ -166,7 +166,7 @@ export class GridStub {
     } else {
       this.nextWorker = 0;
     }
-  }, 16);
+  }, this.options.scrollFramerate || 16);
 
   private sendScrollPositionHorizontal = throttle(() => {
     this.workers[this.nextWorker].postMessage({
@@ -184,7 +184,7 @@ export class GridStub {
     } else {
       this.nextWorker = 0;
     }
-  }, 16);
+  }, this.options.scrollFramerate || 16);
 
   private sendLastScrollPosition = debounce(() => {
     this.workers.forEach((worker) => {
@@ -216,6 +216,8 @@ export class GridStub {
       this.sendLastScrollPosition();
     }
   }
+
+  public set blockRedraw(value: boolean) {}
 
   public onHeightChange: (height: number) => void = () => {};
 

@@ -39,4 +39,5 @@ export interface GridOptions {
   };
   rowHeight?: number;
   groupBy?: string[];
+  scrollFramerate?: number;
 }

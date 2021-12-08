@@ -11,7 +11,7 @@ import React, {
 import useResizeObserver from "use-resize-observer";
 import { ColumnConfig } from "./types/ColumnConfig";
 import { TableHeader } from "./components/table-header/TableHeader";
-import { calculateColumnWidths, debounce } from "./utils/Util";
+import { calculateColumnWidths, debounce, throttle } from "./utils/Util";
 import { createGrid, GridStub } from "./GridStub";
 import { GridOptions } from "./types/Grid";
 import { DeepPartial } from "./types/DeepPartial";
@@ -75,6 +75,19 @@ export function Table(props: TableProps): ReactElement {
     dataRef.current = props.data;
   }, [height, props.data, dataHeight]);
 
+  const updateScrollPositionthrottled = useCallback(
+    throttle((left: number, top: number) => {
+      if (gridRef.current) {
+        gridRef.current.blockRedraw = true;
+        gridRef.current.scrollLeft = left;
+        gridRef.current.scrollTop = top;
+        gridRef.current.blockRedraw = false;
+      }
+      setLeft(left);
+    }, props.options?.scrollFramerate || 16),
+    [setLeft, props.options?.scrollFramerate]
+  );
+
   const handleSroll = useCallback(() => {
     const maxScrollTop =
       (dataHeigtRef.current ||
@@ -92,11 +105,20 @@ export function Table(props: TableProps): ReactElement {
         ? fakeScroll.current?.scrollLeft || 0
         : maxScrollLeft;
 
-    if (gridRef.current) {
-      gridRef.current.scrollLeft = left;
-      gridRef.current.scrollTop = top;
+    if (
+      !props.threadCount ||
+      (props.threadCount <= 1 && !props.useSingleWorker)
+    ) {
+      updateScrollPositionthrottled(left, top);
+    } else {
+      if (gridRef.current) {
+        gridRef.current.blockRedraw = true;
+        gridRef.current.scrollLeft = left;
+        gridRef.current.scrollTop = top;
+        gridRef.current.blockRedraw = false;
+      }
+      setLeft(left);
     }
-    setLeft(left);
     if ((props.threadCount || 0) > 1) {
       canvasRefs.current.forEach((canvas: any, index: number) => {
         if (gridRef.current?.nextWorker === index) {
