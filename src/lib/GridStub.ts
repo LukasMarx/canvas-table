@@ -1,11 +1,44 @@
 import { IFormatter } from "./formatter/IFormatter";
+import { Grid } from "./Grid";
 import { ColumnConfig } from "./types/ColumnConfig";
 import { DeepPartial } from "./types/DeepPartial";
 import { GridOptions } from "./types/Grid";
 import { debounce, throttle } from "./utils/Util";
 import Worker from "./worker/Worker?worker";
 
-const workers = [new Worker(), new Worker()];
+function isOffscreenCanvasSupported() {
+  const canvasTest = document.createElement("canvas");
+  return typeof (canvasTest as any).transferControlToOffscreen === "function";
+}
+
+export function createGrid(
+  canvases: HTMLCanvasElement[],
+  options: GridOptions,
+  formatters?: Record<
+    string,
+    {
+      new (): IFormatter<any>;
+    }
+  >,
+  useSingleWorker?: boolean
+) {
+  var canvasTest = document.createElement("canvas");
+  if (isOffscreenCanvasSupported()) {
+    if (useSingleWorker || canvases.length > 1) {
+      const workers: Worker[] = [];
+      for (let canvas of canvases) {
+        workers.push(new Worker());
+      }
+      return new GridStub(workers, canvases, options);
+    } else if (canvases.length) {
+      const ctx = canvases[0].getContext("2d")!;
+      return new Grid(ctx, canvases[0], formatters || {}, options);
+    }
+  } else {
+    const ctx = canvases[0].getContext("2d")!;
+    return new Grid(ctx, canvases[0], formatters || {}, options);
+  }
+}
 
 export class GridStub {
   public readonly rowHeight = 32;
@@ -16,15 +49,21 @@ export class GridStub {
   private _height: number = 0;
   private _left: number = 0;
   private _top: number = 0;
+  private workers: Worker[] = [];
 
   public nextWorker = 0;
 
-  constructor(canvases: HTMLCanvasElement[], options: GridOptions) {
+  constructor(
+    workers: Worker[],
+    canvases: HTMLCanvasElement[],
+    options: GridOptions
+  ) {
     const offscreens = canvases.map((canvas) =>
       (canvas as any).transferControlToOffscreen()
     );
     this._options = options;
-    workers.forEach((worker, index) => {
+    this.workers = workers;
+    this.workers.forEach((worker, index) => {
       worker.addEventListener("message", (message) => {
         if (message.data === "ready") {
           worker.postMessage(
@@ -50,25 +89,21 @@ export class GridStub {
   }
   public set columnConfig(value: ColumnConfig[] | undefined) {
     this._columnConfig = value;
-    workers[0].postMessage({
-      type: "setColumns",
-      columns: value,
-    });
-    workers[1].postMessage({
-      type: "setColumns",
-      columns: value,
+    this.workers.forEach((worker) => {
+      worker.postMessage({
+        type: "setColumns",
+        columns: value,
+      });
     });
   }
 
   set data(data: any[] | undefined) {
     this._data = data;
-    workers[0].postMessage({
-      type: "setData",
-      data: data,
-    });
-    workers[1].postMessage({
-      type: "setData",
-      data: data,
+    this.workers.forEach((worker) => {
+      worker.postMessage({
+        type: "setData",
+        data: data,
+      });
     });
   }
 
@@ -77,13 +112,11 @@ export class GridStub {
   }
   public set options(value: GridOptions) {
     this._options = value;
-    workers[0].postMessage({
-      type: "setOptions",
-      options: value,
-    });
-    workers[1].postMessage({
-      type: "setOptions",
-      options: value,
+    this.workers.forEach((worker) => {
+      worker.postMessage({
+        type: "setOptions",
+        options: value,
+      });
     });
   }
 
@@ -92,15 +125,12 @@ export class GridStub {
   }
 
   private sendDimensions = debounce(() => {
-    workers[0].postMessage({
-      type: "setDimensions",
-      width: this.width,
-      height: this.height,
-    });
-    workers[1].postMessage({
-      type: "setDimensions",
-      width: this.width,
-      height: this.height,
+    this.workers.forEach((worker) => {
+      worker.postMessage({
+        type: "setDimensions",
+        width: this.width,
+        height: this.height,
+      });
     });
   }, 16);
 
@@ -121,71 +151,80 @@ export class GridStub {
   }
 
   private sendScrollPosition = throttle(() => {
-    workers[this.nextWorker].postMessage({
+    this.workers[this.nextWorker].postMessage({
       type: "setScrollPosition",
-      left: this.left,
-      top: this.top,
+      left: this.scrollLeft,
+      top: this.scrollTop,
     });
-    if (this.nextWorker) {
-      this.nextWorker = 0;
+
+    if (this.workers.length > 1) {
+      if (this.nextWorker) {
+        this.nextWorker = 0;
+      } else {
+        this.nextWorker = 1;
+      }
     } else {
-      this.nextWorker = 1;
+      this.nextWorker = 0;
     }
   }, 16);
 
   private sendScrollPositionHorizontal = throttle(() => {
-    workers[this.nextWorker].postMessage({
+    this.workers[this.nextWorker].postMessage({
       type: "setScrollPosition",
-      left: this.left,
-      top: this.top,
+      left: this.scrollLeft,
+      top: this.scrollTop,
     });
-    if (this.nextWorker) {
-      this.nextWorker = 0;
+
+    if (this.workers.length > 1) {
+      if (this.nextWorker) {
+        this.nextWorker = 0;
+      } else {
+        this.nextWorker = 1;
+      }
     } else {
-      this.nextWorker = 1;
+      this.nextWorker = 0;
     }
   }, 16);
 
   private sendLastScrollPosition = debounce(() => {
-    workers[0].postMessage({
-      type: "setScrollPosition",
-      left: this.left,
-      top: this.top,
-    });
-    workers[1].postMessage({
-      type: "setScrollPosition",
-      left: this.left,
-      top: this.top,
+    this.workers.forEach((worker) => {
+      worker.postMessage({
+        type: "setScrollPosition",
+        left: this.scrollLeft,
+        top: this.scrollTop,
+      });
     });
   }, 64);
 
-  public get left(): number {
+  public get scrollLeft(): number {
     return this._left;
   }
-  public set left(value: number) {
-    this._left = value;
-    this.sendScrollPositionHorizontal();
-    this.sendLastScrollPosition();
+  public set scrollLeft(value: number) {
+    if (value !== this._left) {
+      this._left = value;
+      this.sendScrollPositionHorizontal();
+      this.sendLastScrollPosition();
+    }
   }
-  public get top(): number {
+  public get scrollTop(): number {
     return this._top;
   }
-  public set top(value: number) {
-    this._top = value;
-    this.sendScrollPosition();
-    this.sendLastScrollPosition();
+  public set scrollTop(value: number) {
+    if (value !== this._top) {
+      this._top = value;
+      this.sendScrollPosition();
+      this.sendLastScrollPosition();
+    }
   }
 
   public onHeightChange: (height: number) => void = () => {};
 
   fireClickEvent(options: { left: number; top: number; shiftKey?: boolean }) {
-    workers[0].postMessage({
-      type: "onClick",
-      ...options,
-    });
-    workers[1].postMessage({
-      type: "onClick",
-      ...options,
+    this.workers.forEach((worker) => {
+      worker.postMessage({
+        type: "onClick",
+        ...options,
+      });
     });
   }
 }

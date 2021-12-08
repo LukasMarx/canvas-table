@@ -1,4 +1,5 @@
 import React, {
+  createRef,
   MouseEvent,
   ReactElement,
   useCallback,
@@ -11,32 +12,39 @@ import useResizeObserver from "use-resize-observer";
 import { ColumnConfig } from "./types/ColumnConfig";
 import { TableHeader } from "./components/table-header/TableHeader";
 import { calculateColumnWidths, debounce } from "./utils/Util";
-import { GridStub } from "./GridStub";
+import { createGrid, GridStub } from "./GridStub";
 import { GridOptions } from "./types/Grid";
 import { DeepPartial } from "./types/DeepPartial";
 import "./Table.css";
 import { defaultOptions } from "./DefaultOptions";
 import merge from "lodash.merge";
+import { formatters } from "./formatter";
 
 interface TableProps {
   data: any[];
   columns?: ColumnConfig[];
   onColumnsChange?(columns: ColumnConfig[]): void;
   options?: DeepPartial<GridOptions>;
+  threadCount?: number;
+  useSingleWorker?: boolean;
 }
 
 let ratio = 2;
 
 export function Table(props: TableProps): ReactElement {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const canvasWrapperRef = useRef<HTMLCanvasElement>(null);
-  const canvasRef2 = useRef<HTMLCanvasElement>(null);
-  const canvasWrapperRef2 = useRef<HTMLCanvasElement>(null);
   const fakeScroll = useRef<HTMLDivElement>();
   const { width = 1, height = 1 } = useResizeObserver<HTMLDivElement>({
     box: "border-box",
     ref: fakeScroll.current,
   });
+
+  const threadCounter = useMemo(() => {
+    const result: number[] = [];
+    for (let i = 0; i < (props.threadCount || 1); i++) {
+      result.push(i);
+    }
+    return result;
+  }, []);
 
   const [dataHeight, setDataHeight] = useState(0);
 
@@ -62,7 +70,7 @@ export function Table(props: TableProps): ReactElement {
   const dataHeigtRef = useRef<number>();
   const dataRef = useRef<any[]>();
   useEffect(() => {
-    heightRef.current = height;
+    heightRef.current = fakeScroll.current?.clientHeight || 0;
     dataHeigtRef.current = dataHeight;
     dataRef.current = props.data;
   }, [height, props.data, dataHeight]);
@@ -85,39 +93,52 @@ export function Table(props: TableProps): ReactElement {
         : maxScrollLeft;
 
     if (gridRef.current) {
-      gridRef.current.top = top;
-      gridRef.current.left = left;
+      gridRef.current.scrollLeft = left;
+      gridRef.current.scrollTop = top;
     }
     setLeft(left);
-    if (gridRef.current?.nextWorker === 0) {
-      canvasRef.current!.style.display = "none";
-      canvasRef2.current!.style.display = "unset";
-    } else {
-      canvasRef2.current!.style.display = "none";
-      canvasRef.current!.style.display = "unset";
+    if ((props.threadCount || 0) > 1) {
+      canvasRefs.current.forEach((canvas: any, index: number) => {
+        if (gridRef.current?.nextWorker === index) {
+          canvas.current.style.display = "unset";
+        } else {
+          canvas.current.style.display = "none";
+        }
+      });
     }
 
-    if (canvasWrapperRef.current) {
-      canvasWrapperRef.current.style.transform = `translate(${left}px, ${top}px)`;
-    }
-  }, []);
+    // if (canvasWrapperRef.current) {
+    //   canvasWrapperRef.current.style.transform = `translate(${left}px, ${top}px)`;
+    // }
+  }, [props.threadCount]);
 
   const gridRef = useRef<GridStub>();
   const hasScrollListenerRef = useRef(false);
+  const canvasRefs = useRef<any>([]);
+  canvasRefs.current = threadCounter.map(
+    (element, i) => canvasRefs.current[i] ?? createRef()
+  );
+
   useEffect(() => {
-    if (!gridRef.current && canvasRef.current) {
-      const newGrid = new GridStub(
-        [canvasRef.current, canvasRef2.current!],
-        options
+    if (!gridRef.current && canvasRefs.current) {
+      const newGrid = createGrid(
+        canvasRefs.current.map((x: any) => x.current),
+        options,
+        formatters,
+        props.useSingleWorker
       );
-      newGrid.onHeightChange = (height: number) => {
-        setDataHeight(height);
-      };
-      gridRef.current = newGrid;
-      setGrid(newGrid);
-      if (!hasScrollListenerRef.current) {
-        fakeScroll.current?.addEventListener("scroll", handleSroll);
-        hasScrollListenerRef.current = true;
+      if (newGrid) {
+        newGrid.onHeightChange = (height: number) => {
+          setDataHeight(height);
+        };
+        gridRef.current = newGrid as any;
+        setGrid(newGrid as any);
+        if (!hasScrollListenerRef.current) {
+          fakeScroll.current?.addEventListener("scroll", handleSroll);
+          hasScrollListenerRef.current = true;
+        }
+      } else {
+        throw new Error("Grid creation failed");
       }
     }
   }, []);
@@ -136,8 +157,8 @@ export function Table(props: TableProps): ReactElement {
 
   useEffect(() => {
     if (grid) {
-      grid.width = (width - 18) * ratio;
-      grid.height = height * ratio;
+      grid.width = (fakeScroll.current?.clientWidth || 0) * ratio;
+      grid.height = (fakeScroll.current?.clientHeight || 0) * ratio;
     }
   }, [grid, width, height]);
 
@@ -167,9 +188,12 @@ export function Table(props: TableProps): ReactElement {
       };
   };
 
-  const handleColumnsChange = (columns: ColumnConfig[]) => {
-    props.onColumnsChange?.(columns);
-  };
+  const handleColumnsChange = useCallback(
+    (columns: ColumnConfig[]) => {
+      props.onColumnsChange?.(columns);
+    },
+    [props.onColumnsChange]
+  );
 
   const handleTableHeaderClick = useCallback(
     (e: React.MouseEvent, column: ColumnConfig) => {
@@ -228,6 +252,7 @@ export function Table(props: TableProps): ReactElement {
         overflow: "hidden",
         boxSizing: "border-box",
         display: "flex",
+        position: "relative",
         flexDirection: "column",
       }}
     >
@@ -248,39 +273,6 @@ export function Table(props: TableProps): ReactElement {
         }}
       >
         <div
-          ref={canvasWrapperRef as any}
-          style={{
-            position: "absolute",
-            pointerEvents: "none",
-            backgroundColor: options?.theme?.palette?.backgroundColor,
-            color: options?.theme?.palette?.textColor,
-          }}
-        >
-          <canvas
-            ref={canvasRef}
-            height={height * ratio}
-            width={(width - 18) * ratio}
-            style={{
-              width: width - 18,
-              height: height,
-              pointerEvents: "all",
-            }}
-            onClick={handleClick}
-          />
-
-          <canvas
-            ref={canvasRef2}
-            height={height * ratio}
-            width={(width - 18) * ratio}
-            style={{
-              width: width - 18,
-              height: height,
-              pointerEvents: "all",
-            }}
-            onClick={handleClick}
-          />
-        </div>
-        <div
           style={{
             height: dataHeight || (grid?.rowHeight || 0) * props.data.length,
             width: scrollWidth,
@@ -290,6 +282,24 @@ export function Table(props: TableProps): ReactElement {
           }}
         ></div>
       </div>
+      {threadCounter.map((index) => {
+        return (
+          <canvas
+            key={index}
+            ref={canvasRefs.current[index] as any}
+            height={(fakeScroll.current?.clientHeight || 0) * ratio}
+            width={(fakeScroll.current?.clientWidth || 0) * ratio}
+            style={{
+              width: fakeScroll.current?.clientWidth || 0,
+              height: Math.round(fakeScroll.current?.clientHeight || 0),
+              top: 48,
+              pointerEvents: "all",
+              position: "absolute",
+            }}
+            onClick={handleClick}
+          />
+        );
+      })}
     </div>
   );
 }

@@ -123,6 +123,36 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
     );
   }, [props.columns]);
 
+  const header = useMemo(() => {
+    return (
+      columnConfig && (
+        <DndContext onDragEnd={handleDragEnd} sensors={sensors}>
+          <SortableContext
+            items={items}
+            strategy={horizontalListSortingStrategy}
+          >
+            {columnConfig?.map((column: any, index: number) => {
+              return (
+                <TableHeaderCell
+                  key={column.field}
+                  id={column.field}
+                  title={column.field}
+                  height={headerHeight}
+                  width={column.width}
+                  onClick={props.onClick}
+                  column={column}
+                  options={props.options}
+                  disabled={column.pinned}
+                  hasMoreThanOneSortIndex={hasMoreThanOneSortIndex}
+                ></TableHeaderCell>
+              );
+            })}
+          </SortableContext>
+        </DndContext>
+      )
+    );
+  }, [columnConfig, props.onClick, sensors, handleDragEnd]);
+
   return (
     <div
       ref={outerRef as any}
@@ -152,31 +182,7 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
             transform: `translateX(-${props.scrollLeft}px)`,
           }}
         >
-          {columnConfig && (
-            <DndContext onDragEnd={handleDragEnd} sensors={sensors}>
-              <SortableContext
-                items={items}
-                strategy={horizontalListSortingStrategy}
-              >
-                {columnConfig?.map((column: any, index: number) => {
-                  return (
-                    <TableHeaderCell
-                      key={column.field}
-                      id={column.field}
-                      title={column.field}
-                      height={headerHeight}
-                      width={column.width}
-                      onClick={props.onClick}
-                      column={column}
-                      options={props.options}
-                      disabled={column.pinned}
-                      hasMoreThanOneSortIndex={hasMoreThanOneSortIndex}
-                    ></TableHeaderCell>
-                  );
-                })}
-              </SortableContext>
-            </DndContext>
-          )}
+          {header}
         </div>
         <TableHeaderResizeOverlay
           absolteColumnConfig={columnConfig}

@@ -175,9 +175,7 @@ export class Grid extends BaseGrid {
     const fontFamiliy = this.options.theme?.font?.familiy;
 
     const font = `${fontStyle} ${fontVariant} ${fontWeight} ${fontSize} ${fontFamiliy}`;
-    if (ctx.font !== font) {
-      ctx.font = font;
-    }
+    ctx.font = font;
   }
 
   drawRow(absoluteIndex: number, y: number) {
@@ -215,10 +213,9 @@ export class Grid extends BaseGrid {
 
     // draw a second time for frozen columns
     let pinnedColumnOffset = 0;
+    this.resetFont(this.ctx);
     this.columnConfig?.forEach((column, index) => {
       if (column.pinned) {
-        const ratioWidth = this.width / ratio;
-
         this.ctx.save();
         this.ctx.rect(
           index === 0 ? pinnedColumnOffset + offsetLeft : pinnedColumnOffset,
@@ -230,7 +227,6 @@ export class Grid extends BaseGrid {
         );
         this.ctx.clip();
         this.ctx.beginPath();
-        this.resetFont(this.ctx);
         this.drawCell(
           this.calculatedData?.[absoluteIndex]?.data?.[column.field],
           column,

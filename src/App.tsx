@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import logo from "./logo.svg";
 import "./App.css";
 import { Table } from "./lib/Table";
@@ -75,9 +75,11 @@ function App() {
   return (
     <div className="App" style={{ padding: 128, boxSizing: "border-box" }}>
       <Table
-        data={data}
+        data={data as any}
         columns={columnConfig}
         onColumnsChange={setColumnConfig}
+        threadCount={1}
+        useSingleWorker={false}
       />
     </div>
   );
