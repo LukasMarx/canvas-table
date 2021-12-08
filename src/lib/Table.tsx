@@ -201,8 +201,8 @@ export function Table(props: TableProps): ReactElement {
 
   const handleClick = (e: MouseEvent) => {
     grid?.fireClickEvent({
-      left: e.nativeEvent.offsetX,
-      top: e.nativeEvent.offsetY,
+      left: e.nativeEvent.offsetX - (fakeScroll.current?.scrollLeft || 0),
+      top: e.nativeEvent.offsetY - (fakeScroll.current?.scrollTop || 0),
       shiftKey: e.shiftKey,
     }),
       {
@@ -293,6 +293,7 @@ export function Table(props: TableProps): ReactElement {
           overflow: "auto",
           position: "relative",
         }}
+        onClick={handleClick}
       >
         <div
           style={{
@@ -300,7 +301,6 @@ export function Table(props: TableProps): ReactElement {
             width: scrollWidth,
             position: "relative",
             overflow: "hidden",
-            pointerEvents: "none",
           }}
         ></div>
       </div>
@@ -315,10 +315,9 @@ export function Table(props: TableProps): ReactElement {
               width: fakeScroll.current?.clientWidth || 0,
               height: Math.round(fakeScroll.current?.clientHeight || 0),
               top: 48,
-              pointerEvents: "all",
+              pointerEvents: "none",
               position: "absolute",
             }}
-            onClick={handleClick}
           />
         );
       })}

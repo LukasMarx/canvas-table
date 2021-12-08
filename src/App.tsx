@@ -80,6 +80,7 @@ function App() {
         onColumnsChange={setColumnConfig}
         threadCount={1}
         useSingleWorker={false}
+        options={{ dataTree: true }}
       />
     </div>
   );

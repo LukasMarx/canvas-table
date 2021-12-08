@@ -32,7 +32,7 @@ export class Grid extends BaseGrid {
     });
   }
 
-  onClick(options: { left: number; top: number; shiftKey?: boolean }) {
+  fireClickEvent(options: { left: number; top: number; shiftKey?: boolean }) {
     this.handleClick(options);
   }
 

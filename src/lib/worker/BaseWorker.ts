@@ -63,7 +63,7 @@ export function initializeWorker(
       }
       if (evt.data.type === "onClick") {
         if (grid) {
-          grid.onClick({
+          grid.fireClickEvent({
             left: evt.data.left,
             top: evt.data.top,
             shiftKey: evt.data.shiftKey,
