@@ -1,10 +1,11 @@
 import { BaseGrid } from "./BaseGrid";
+import { drawTextInCell } from "./formatter/FormatterUtils";
 import { IFormatter } from "./formatter/IFormatter";
 import { ColumnConfig } from "./types/ColumnConfig";
 import { DeepPartial } from "./types/DeepPartial";
 import { RowClickEvent } from "./types/Events";
 import { GridOptions } from "./types/Grid";
-import { calculateColumnWidths, debounce, throttle } from "./utils/Util";
+import { calculateColumnWidths } from "./utils/Util";
 
 const ratio = 2;
 
@@ -70,8 +71,8 @@ export class Grid extends BaseGrid {
     const offset = level * treeControlWidth;
     if (
       rowData.children &&
-      options.left > 4 + offset &&
-      options.left < 22 + offset
+      (rowData.__isGroup ||
+        (options.left > 4 + offset && options.left < 22 + offset))
     ) {
       if (this.expandedKeys[key]) {
         const newKeys = { ...this.expandedKeys };
@@ -183,10 +184,19 @@ export class Grid extends BaseGrid {
       this.ctx.fillStyle = this.backgroundColorSelection;
       this.ctx.fillRect(0, y, this.ctx.canvas.width, this.rowHeight);
     }
-    this.ctx.strokeStyle = this.textColor;
-    this.ctx.fillStyle = this.textColor;
-
     const row = this.calculatedData[absoluteIndex].data;
+    if (row.__isGroup) {
+      this.ctx.fillStyle =
+        this.options.theme.palette.groupHeaderBackgroundColor;
+      this.ctx.fillRect(0, y, this.ctx.canvas.width, this.rowHeight);
+    }
+    this.ctx.strokeStyle = row.__isGroup
+      ? this.options.theme.palette.groupHeaderTextColor
+      : this.textColor;
+    this.ctx.fillStyle = row.__isGroup
+      ? this.options.theme.palette.groupHeaderTextColor
+      : this.textColor;
+
     const level = this.calculatedData[absoluteIndex].level;
     const hasChildren = row.children && row.children.length > 0;
 
@@ -195,7 +205,10 @@ export class Grid extends BaseGrid {
 
     const paddingLeft = this.options.theme.spacing.cellPaddingLeft;
     const paddingRight = this.options.theme.spacing.cellPaddingLeft;
-    if (this.options.dataTree && hasChildren) {
+    if (
+      (this.options.dataTree && hasChildren) ||
+      (hasChildren && row.__isGroup)
+    ) {
       this.drawTreeControl(
         this.expandedIndizes[absoluteIndex],
         paddingLeft - this.scrollLeft + level * treeControlWidth,
@@ -214,76 +227,96 @@ export class Grid extends BaseGrid {
     // draw a second time for frozen columns
     let pinnedColumnOffset = 0;
     this.resetFont(this.ctx);
-    this.columnConfig?.forEach((column, index) => {
-      if (column.pinned) {
-        this.ctx.save();
-        this.ctx.rect(
-          index === 0 ? pinnedColumnOffset + offsetLeft : pinnedColumnOffset,
-          y,
-          index === 0
-            ? this.columnWidths[index] - offsetLeft
-            : this.columnWidths[index],
-          this.rowHeight
-        );
-        this.ctx.clip();
-        this.ctx.beginPath();
-        this.drawCell(
-          this.calculatedData?.[absoluteIndex]?.data?.[column.field],
-          column,
-          y,
-          index === 0 ? pinnedColumnOffset + offsetLeft : pinnedColumnOffset,
-          index === 0
-            ? this.columnWidths[index] - paddingRight - offsetLeft
-            : this.columnWidths[index] - paddingRight
-        );
-        this.ctx.closePath();
-        this.ctx.restore();
-        pinnedColumnOffset += this.columnWidths[index];
-      }
-    });
+    if (!row.__isGroup) {
+      this.columnConfig?.forEach((column, index) => {
+        if (column.pinned) {
+          this.ctx.save();
+          this.ctx.rect(
+            index === 0 ? pinnedColumnOffset + offsetLeft : pinnedColumnOffset,
+            y,
+            index === 0
+              ? this.columnWidths[index] - offsetLeft
+              : this.columnWidths[index],
+            this.rowHeight
+          );
+          this.ctx.clip();
+          this.ctx.beginPath();
+          this.drawCell(
+            this.calculatedData?.[absoluteIndex]?.data?.[column.field],
+            column,
+            y,
+            index === 0 ? pinnedColumnOffset + offsetLeft : pinnedColumnOffset,
+            index === 0
+              ? this.columnWidths[index] - paddingRight - offsetLeft
+              : this.columnWidths[index] - paddingRight
+          );
+          this.ctx.closePath();
+          this.ctx.restore();
+          pinnedColumnOffset += this.columnWidths[index];
+        }
+      });
+    }
 
     let x = 0 - this.scrollLeft + pinnedColumnOffset;
-    this.columnConfig?.forEach((column, index) => {
-      if (column.pinned) {
-        return;
-      }
-      const ratioWidth = this.width / ratio;
-      if (
-        (x >= 0 && x <= ratioWidth) ||
-        (x + this.columnWidths[index] >= 0 &&
-          x + this.columnWidths[index] <= ratioWidth)
-      ) {
-        this.ctx.save();
-
-        let clipx = index === 0 ? x + offsetLeft : x;
-        if (clipx < pinnedColumnOffset) {
-          clipx = pinnedColumnOffset;
+    if (row.__isGroup) {
+      this.drawGroupHeader(row, treeControlWidth, y);
+    } else {
+      this.columnConfig?.forEach((column, index) => {
+        if (column.pinned) {
+          return;
         }
-        this.ctx.rect(
-          clipx,
-          y,
-          index === 0
-            ? this.columnWidths[index] - offsetLeft
-            : this.columnWidths[index],
-          this.rowHeight
-        );
-        this.ctx.clip();
-        this.ctx.beginPath();
-        this.resetFont(this.ctx);
-        this.drawCell(
-          this.calculatedData?.[absoluteIndex]?.data?.[column.field],
-          column,
-          y,
-          index === 0 ? x + offsetLeft : x,
-          index === 0
-            ? this.columnWidths[index] - paddingRight - offsetLeft
-            : this.columnWidths[index] - paddingRight
-        );
-        this.ctx.closePath();
-        this.ctx.restore();
-      }
-      x += this.columnWidths[index];
-    });
+        const ratioWidth = this.width / ratio;
+        if (
+          (x >= 0 && x <= ratioWidth) ||
+          (x + this.columnWidths[index] >= 0 &&
+            x + this.columnWidths[index] <= ratioWidth)
+        ) {
+          this.ctx.save();
+
+          let clipx = index === 0 ? x + offsetLeft : x;
+          if (clipx < pinnedColumnOffset) {
+            clipx = pinnedColumnOffset;
+          }
+          this.ctx.rect(
+            clipx,
+            y,
+            index === 0
+              ? this.columnWidths[index] - offsetLeft
+              : this.columnWidths[index],
+            this.rowHeight
+          );
+          this.ctx.clip();
+          this.ctx.beginPath();
+          this.resetFont(this.ctx);
+          this.drawCell(
+            this.calculatedData?.[absoluteIndex]?.data?.[column.field],
+            column,
+            y,
+            index === 0 ? x + offsetLeft : x,
+            index === 0
+              ? this.columnWidths[index] - paddingRight - offsetLeft
+              : this.columnWidths[index] - paddingRight
+          );
+          this.ctx.closePath();
+          this.ctx.restore();
+        }
+        x += this.columnWidths[index];
+      });
+    }
+  }
+
+  drawGroupHeader(row: any, x: number, rowTop: number) {
+    this.ctx.beginPath();
+    drawTextInCell(
+      this.ctx,
+      row.__groupValue + ` (${row.children.length})`,
+      x,
+      rowTop,
+      10000,
+      this.rowHeight,
+      "left"
+    );
+    this.ctx.closePath();
   }
 
   drawTreeControl(open: boolean, x: number, rowTop: any) {

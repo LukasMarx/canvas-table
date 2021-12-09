@@ -19,6 +19,8 @@ export const defaultOptions: GridOptions = {
       headerTextColor: "#212121",
       headerTextColorDragging: "#212121",
       lineColor: "#212121",
+      groupHeaderBackgroundColor: "#333333",
+      groupHeaderTextColor: "#fff",
     },
     spacing: {
       cellPaddingLeft: 8,

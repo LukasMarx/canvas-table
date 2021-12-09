@@ -10,7 +10,7 @@ function App() {
     {
       field: "name",
       width: 150,
-      pinned: true,
+      // pinned: true,
     },
     {
       field: "index",
@@ -19,7 +19,7 @@ function App() {
     {
       field: "guid",
       width: 300,
-      pinned: true,
+      // pinned: true,
     },
 
     {
@@ -40,7 +40,7 @@ function App() {
       formatterParams: {
         alignHorizontal: "left",
       },
-      pinned: true,
+      // pinned: true,
     },
     {
       field: "eyeColor",
@@ -80,7 +80,7 @@ function App() {
         onColumnsChange={setColumnConfig}
         threadCount={1}
         useSingleWorker={false}
-        options={{ dataTree: true }}
+        options={{ dataTree: false, groupBy: ["age"] }}
       />
     </div>
   );

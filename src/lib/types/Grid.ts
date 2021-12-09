@@ -29,6 +29,8 @@ export interface GridOptions {
       headerBackgroundColor: string;
       headerTextColor: string;
       headerBackgroundColorDragging: string;
+      groupHeaderBackgroundColor: string;
+      groupHeaderTextColor: string;
       headerTextColorDragging: string;
       lineColor: string;
     };

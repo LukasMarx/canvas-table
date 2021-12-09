@@ -70,6 +70,11 @@ export function initializeWorker(
           });
         }
       }
+      if (evt.data.type === "redraw") {
+        if (grid) {
+          grid.redraw();
+        }
+      }
       if (evt.data.type === "setDimensions") {
         const width = evt.data.width;
         const height = evt.data.height;

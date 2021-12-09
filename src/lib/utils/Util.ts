@@ -37,25 +37,20 @@ export function calculateColumnWidths(
   return widths;
 }
 
-export function throttle(callback: any, limit: number) {
-  var tick = false;
-  return function (...args: any) {
-    if (!tick) {
-      callback(...args);
-      tick = true;
-      setTimeout(function () {
-        tick = false;
-      }, limit);
+export function objectToGroupTree(obj: Record<string, any>) {
+  const result = [];
+  for (const [key, value] of Object.entries(obj)) {
+    let children: any[];
+    if (Array.isArray(value)) {
+      children = value;
+    } else {
+      children = objectToGroupTree(value);
     }
-  };
-}
-
-export function debounce(func: any, timeout = 300) {
-  let timer: number;
-  return (...args: any) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      func.call(args);
-    }, timeout);
-  };
+    result.push({
+      __groupValue: key,
+      __isGroup: true,
+      children,
+    });
+  }
+  return result;
 }

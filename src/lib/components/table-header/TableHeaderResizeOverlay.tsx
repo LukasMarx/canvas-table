@@ -1,6 +1,6 @@
+import throttle from "lodash.throttle";
 import React, { ReactElement, useEffect, useLayoutEffect, useRef } from "react";
 import { ColumnConfig } from "../../types/ColumnConfig";
-import { throttle } from "../../utils/Util";
 
 interface TableHeaderResizeOverlayProps {
   absolteColumnConfig: ColumnConfig[];

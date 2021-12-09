@@ -4,6 +4,7 @@ import React, {
   ReactElement,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -11,7 +12,7 @@ import React, {
 import useResizeObserver from "use-resize-observer";
 import { ColumnConfig } from "./types/ColumnConfig";
 import { TableHeader } from "./components/table-header/TableHeader";
-import { calculateColumnWidths, debounce, throttle } from "./utils/Util";
+import { calculateColumnWidths, objectToGroupTree } from "./utils/Util";
 import { createGrid, GridStub } from "./GridStub";
 import { GridOptions } from "./types/Grid";
 import { DeepPartial } from "./types/DeepPartial";
@@ -19,6 +20,9 @@ import "./Table.css";
 import { defaultOptions } from "./DefaultOptions";
 import merge from "lodash.merge";
 import { formatters } from "./formatter";
+import groupArray from "group-array";
+import debounce from "lodash.debounce";
+import throttle from "lodash.throttle";
 
 interface TableProps {
   data: any[];
@@ -66,6 +70,19 @@ export function Table(props: TableProps): ReactElement {
     }
   }, [props.options]);
 
+  const [divWidth, setDivWidth] = useState(0);
+  useLayoutEffect(() => {
+    if (fakeScroll.current?.clientWidth !== divWidth) {
+      setDivWidth(fakeScroll.current?.clientWidth || 0);
+
+      requestAnimationFrame(() => {
+        if (gridRef.current) {
+          gridRef.current.redraw();
+        }
+      });
+    }
+  });
+
   const heightRef = useRef<number>();
   const dataHeigtRef = useRef<number>();
   const dataRef = useRef<any[]>();
@@ -87,29 +104,47 @@ export function Table(props: TableProps): ReactElement {
     }, props.options?.scrollFramerate || 16),
     [setLeft, props.options?.scrollFramerate]
   );
+  const updateScrollPositionDebounced = useCallback(
+    debounce((left: number, top: number) => {
+      console.log(left, top);
+      if (gridRef.current) {
+        gridRef.current.blockRedraw = true;
+        gridRef.current.scrollLeft = left || 0;
+        gridRef.current.scrollTop = top || 0;
+        gridRef.current.blockRedraw = false;
+      }
+      setLeft(left);
+    }, 64),
+    [setLeft, props.options?.scrollFramerate]
+  );
 
   const handleSroll = useCallback(() => {
     const maxScrollTop =
       (dataHeigtRef.current ||
         (gridRef.current?.rowHeight || 0) * (dataRef.current?.length || 0)) -
       (heightRef.current || 0);
-    const top =
+    const top = Math.max(
       (fakeScroll?.current?.scrollTop || 0) < maxScrollTop
         ? fakeScroll.current?.scrollTop || 0
-        : maxScrollTop;
+        : maxScrollTop,
+      0
+    );
 
     const maxScrollLeft = scrollWidth;
 
-    const left =
+    const left = Math.max(
       (fakeScroll?.current?.scrollLeft || 0) < maxScrollLeft
         ? fakeScroll.current?.scrollLeft || 0
-        : maxScrollLeft;
+        : maxScrollLeft,
+      0
+    );
 
     if (
       !props.threadCount ||
       (props.threadCount <= 1 && !props.useSingleWorker)
     ) {
       updateScrollPositionthrottled(left, top);
+      updateScrollPositionDebounced(left, top);
     } else {
       if (gridRef.current) {
         gridRef.current.blockRedraw = true;
@@ -165,11 +200,25 @@ export function Table(props: TableProps): ReactElement {
     }
   }, []);
 
-  useEffect(() => {
-    if (props.data && grid) {
-      grid.data = props.data;
+  const data = useMemo(() => {
+    if (props.options?.groupBy) {
+      const grouped = groupArray(
+        props.data || [],
+        ...(props.options?.groupBy as string[])
+      );
+      return objectToGroupTree(grouped);
+    } else {
+      return props.data || [];
     }
-  }, [grid, props.data]);
+  }, [props.data]);
+
+  console.log(data);
+
+  useEffect(() => {
+    if (data && grid) {
+      grid.data = data;
+    }
+  }, [grid, data]);
 
   useEffect(() => {
     if (options && grid) {
@@ -310,9 +359,9 @@ export function Table(props: TableProps): ReactElement {
             key={index}
             ref={canvasRefs.current[index] as any}
             height={(fakeScroll.current?.clientHeight || 0) * ratio}
-            width={(fakeScroll.current?.clientWidth || 0) * ratio}
+            width={divWidth * ratio}
             style={{
-              width: fakeScroll.current?.clientWidth || 0,
+              width: divWidth,
               height: Math.round(fakeScroll.current?.clientHeight || 0),
               top: 48,
               pointerEvents: "none",

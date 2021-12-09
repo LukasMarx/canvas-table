@@ -1,9 +1,10 @@
+import debounce from "lodash.debounce";
+import throttle from "lodash.throttle";
 import { IFormatter } from "./formatter/IFormatter";
 import { Grid } from "./Grid";
 import { ColumnConfig } from "./types/ColumnConfig";
 import { DeepPartial } from "./types/DeepPartial";
 import { GridOptions } from "./types/Grid";
-import { debounce, throttle } from "./utils/Util";
 import Worker from "./worker/Worker?worker";
 
 function isOffscreenCanvasSupported() {
@@ -220,6 +221,14 @@ export class GridStub {
   public set blockRedraw(value: boolean) {}
 
   public onHeightChange: (height: number) => void = () => {};
+
+  public redraw() {
+    this.workers.forEach((worker) => {
+      worker.postMessage({
+        type: "redraw",
+      });
+    });
+  }
 
   fireClickEvent(options: { left: number; top: number; shiftKey?: boolean }) {
     this.workers.forEach((worker) => {

@@ -9,6 +9,7 @@ export type WorkerMessage =
   | WorkerSetScrollPositionMessage
   | WorkerOnClickMessage
   | WorkerSetOptionsMessage
+  | WorkerRedrawMessage
   | WorkerSetColumnsMessage;
 
 export interface WorkerInitMessage {
