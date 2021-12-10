@@ -119,22 +119,20 @@ export class Grid extends BaseGrid {
     const firstIndex = Math.floor(this.scrollTop / this.rowHeight);
     const lastIndex =
       firstIndex + Math.floor(this.height / ratio / this.rowHeight);
-    const activeData = this.calculatedData?.slice(firstIndex, lastIndex + 1);
+    const activeData = this.calculatedData?.slice(firstIndex, lastIndex + 2);
     this.ctx.beginPath();
     this.ctx.strokeStyle = this.options.theme.palette.lineColor;
+    const offsetTop = this.scrollTop % this.rowHeight;
     activeData?.forEach((datapoint, index) => {
-      const offsetTop = this.scrollTop % this.rowHeight;
       const y = Math.floor(index * this.rowHeight - offsetTop);
-
       this.drawRowDelimiter(y);
     });
+    this.drawRowDelimiter(activeData.length * this.rowHeight - offsetTop);
     this.ctx.closePath();
     this.ctx.stroke();
     this.ctx.beginPath();
     activeData?.forEach((datapoint, index) => {
-      const offsetTop = this.scrollTop % this.rowHeight;
       const y = Math.floor(index * this.rowHeight - offsetTop);
-
       this.drawRow(firstIndex + index, y);
     });
     this.ctx.closePath();
