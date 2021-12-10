@@ -10,7 +10,7 @@ function App() {
     {
       field: "name",
       width: 150,
-      // pinned: true,
+      pinned: true,
     },
     {
       field: "index",
@@ -19,11 +19,12 @@ function App() {
     {
       field: "guid",
       width: 300,
-      // pinned: true,
+      pinned: true,
     },
 
     {
       field: "isActive",
+      formatter: "boolean",
       width: 100,
     },
     {
@@ -40,7 +41,7 @@ function App() {
       formatterParams: {
         alignHorizontal: "left",
       },
-      // pinned: true,
+      pinned: true,
     },
     {
       field: "eyeColor",

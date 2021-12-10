@@ -1,3 +1,4 @@
+import { BooleanFormatter } from "./BooleanFormatter";
 import { IFormatter } from "./IFormatter";
 import { StringFormatter } from "./StringFormatter";
 
@@ -8,4 +9,5 @@ export const formatters: Record<
   }
 > = {
   default: StringFormatter,
+  boolean: BooleanFormatter,
 };

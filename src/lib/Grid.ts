@@ -186,6 +186,9 @@ export class Grid extends BaseGrid {
     if (this.selectionIndizes[absoluteIndex]) {
       this.ctx.fillStyle = this.backgroundColorSelection;
       this.ctx.fillRect(0, y, this.ctx.canvas.width, this.rowHeight);
+    } else {
+      this.ctx.fillStyle = this.backgroundColor;
+      this.ctx.fillRect(0, y, this.ctx.canvas.width, this.rowHeight);
     }
     const row = this.calculatedData[absoluteIndex].data;
     if (row.__isGroup) {

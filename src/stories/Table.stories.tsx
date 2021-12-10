@@ -21,6 +21,7 @@ const columnConfig = [
 
   {
     field: "isActive",
+    formatter: "boolean",
     width: 100,
   },
   {
@@ -90,6 +91,7 @@ const columnConfigSorted = [
 
   {
     field: "isActive",
+    formatter: "boolean",
     width: 100,
   },
   {
@@ -158,6 +160,7 @@ const columnConfigLocked = [
 
   {
     field: "isActive",
+    formatter: "boolean",
     width: 100,
   },
   {
@@ -249,6 +252,10 @@ DarkTheme.args = {
         textColor: "#fff",
         textColorSelected: "#fff",
         lineColor: "#212121",
+        headerBackgroundColorDragging: "#eee",
+        headerTextColorDragging: "#212121",
+        groupHeaderBackgroundColor: "#333333",
+        groupHeaderTextColor: "#fff",
       },
     },
   },
