@@ -70,9 +70,11 @@ export class Grid extends BaseGrid {
     // Check if clicked on TreeControl
     const offset = level * treeControlWidth;
     if (
-      rowData.children &&
-      (rowData.__isGroup ||
-        (options.left > 4 + offset && options.left < 22 + offset))
+      (this.options.dataTree &&
+        rowData.children &&
+        options.left > 4 + offset &&
+        options.left < 22 + offset) ||
+      (rowData.children && rowData.__isGroup)
     ) {
       if (this.expandedKeys[key]) {
         const newKeys = { ...this.expandedKeys };
