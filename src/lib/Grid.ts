@@ -13,6 +13,8 @@ const emptyFormatterParams = {};
 
 export class Grid extends BaseGrid {
   public readonly headerHeight = 48;
+  private readonly treeControlWidth = 25;
+  private readonly treeBranchWidth = 25;
   public caches: HTMLCanvasElement[] = [];
   constructor(
     private ctx: CanvasRenderingContext2D,
@@ -51,6 +53,7 @@ export class Grid extends BaseGrid {
     const rowData = this.calculatedData?.[rowIndex].data;
     const level = this.calculatedData?.[rowIndex].level;
     let cellIndex: number | undefined = undefined;
+
     let left = 0;
     this.columnConfig?.forEach((column, index) => {
       if (
@@ -200,9 +203,6 @@ export class Grid extends BaseGrid {
     const level = this.calculatedData[absoluteIndex].level;
     const hasChildren = row.children && row.children.length > 0;
 
-    const treeControlWidth = 25;
-    const treeBranchWidth = 25;
-
     const paddingLeft = this.options.theme.spacing.cellPaddingLeft;
     const paddingRight = this.options.theme.spacing.cellPaddingLeft;
     if (
@@ -211,20 +211,39 @@ export class Grid extends BaseGrid {
     ) {
       this.drawTreeControl(
         this.expandedIndizes[absoluteIndex],
-        paddingLeft - this.scrollLeft + level * treeControlWidth,
+        paddingLeft - this.scrollLeft + level * this.treeControlWidth,
         y
       );
     }
     const offsetLeft =
       this.options.dataTree && hasChildren
-        ? (level + 1) * treeControlWidth
-        : level * treeBranchWidth;
+        ? (level + 1) * this.treeControlWidth
+        : level * this.treeBranchWidth;
 
     if (this.options.dataTree && (!hasChildren || level > 0)) {
-      this.drawTreeBranch(-12 - this.scrollLeft + level * treeControlWidth, y);
+      this.drawTreeBranch(
+        -12 - this.scrollLeft + level * this.treeControlWidth,
+        y
+      );
     }
 
     // draw a second time for frozen columns
+    const { offset: pinnedColumnOffset } = this.drawFrozenColumns(
+      row,
+      y,
+      offsetLeft,
+      paddingRight
+    );
+
+    this.drawColumns(row, y, offsetLeft, paddingRight, pinnedColumnOffset);
+  }
+
+  private drawFrozenColumns(
+    row: any,
+    y: number,
+    offsetLeft: number,
+    paddingRight: number
+  ) {
     let pinnedColumnOffset = 0;
     this.resetFont(this.ctx);
     if (!row.__isGroup) {
@@ -242,7 +261,7 @@ export class Grid extends BaseGrid {
           this.ctx.clip();
           this.ctx.beginPath();
           this.drawCell(
-            this.calculatedData?.[absoluteIndex]?.data?.[column.field],
+            row?.[column.field],
             column,
             y,
             index === 0 ? pinnedColumnOffset + offsetLeft : pinnedColumnOffset,
@@ -256,10 +275,21 @@ export class Grid extends BaseGrid {
         }
       });
     }
+    return {
+      offset: pinnedColumnOffset,
+    };
+  }
 
+  private drawColumns(
+    row: any,
+    y: number,
+    offsetLeft: number,
+    paddingRight: number,
+    pinnedColumnOffset: number
+  ) {
     let x = 0 - this.scrollLeft + pinnedColumnOffset;
     if (row.__isGroup) {
-      this.drawGroupHeader(row, treeControlWidth, y);
+      this.drawGroupHeader(row, this.treeControlWidth, y);
     } else {
       this.columnConfig?.forEach((column, index) => {
         if (column.pinned) {
@@ -289,7 +319,7 @@ export class Grid extends BaseGrid {
           this.ctx.beginPath();
           this.resetFont(this.ctx);
           this.drawCell(
-            this.calculatedData?.[absoluteIndex]?.data?.[column.field],
+            row[column.field],
             column,
             y,
             index === 0 ? x + offsetLeft : x,
@@ -305,7 +335,7 @@ export class Grid extends BaseGrid {
     }
   }
 
-  drawGroupHeader(row: any, x: number, rowTop: number) {
+  private drawGroupHeader(row: any, x: number, rowTop: number) {
     this.ctx.beginPath();
     drawTextInCell(
       this.ctx,
