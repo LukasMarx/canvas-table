@@ -46,6 +46,7 @@ interface TableHeaderProps {
     index: number,
     e: React.MouseEvent
   ): void;
+  tableContentWidth?: number;
 }
 
 const ratio = 2;
@@ -53,14 +54,13 @@ const headerHeight = 48;
 
 export function TableHeader(props: TableHeaderProps): ReactElement {
   const outerRef = useRef<HTMLDivElement>();
-  const { width = 1 } = useResizeObserver<HTMLDivElement>({
-    box: 'border-box',
-    ref: outerRef as any,
-  });
   const columnConfigRef = useRef<ColumnConfig[]>();
   const columnConfig = useMemo<ColumnConfig[]>(() => {
     if (props.columns) {
-      const columns = calculateColumnWidths(props.columns, width, ratio);
+      const columns = calculateColumnWidths(
+        props.columns,
+        props.tableContentWidth || 0
+      );
       const columnConfig = props.columns
         ? JSON.parse(JSON.stringify(props.columns))
         : [];
@@ -79,7 +79,7 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
       columnConfigRef.current = columnConfig;
       return columnConfig;
     }
-  }, [props.columns, ratio, width]);
+  }, [props.columns, ratio, props.tableContentWidth]);
 
   const items = columnConfig?.map((col: any) => col.field);
 

@@ -3,9 +3,9 @@ import { ColumnConfig } from '../types/ColumnConfig';
 export function calculateColumnWidths(
   columns: ColumnConfig[],
   width: number,
-  ratio: number
+  ratio = 1
 ): number[] {
-  let distributeableSpace = width;
+  let distributeableSpace = width / ratio;
   let numOfRelativeColumns = 0;
   for (const column of columns) {
     if (column.width != null) {

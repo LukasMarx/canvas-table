@@ -380,6 +380,7 @@ export function Table(props: TableProps): ReactElement {
         options={options}
         onClick={handleTableHeaderClick}
         onColumnHeaderContextMenu={handleTableHeaderContextMenu}
+        tableContentWidth={divWidth}
       />
       <div
         ref={fakeScroll as any}
