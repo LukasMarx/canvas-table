@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+html {
+  -webkit-text-size-adjust: 100%;
+  font-family: Roboto, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans,
+    sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol,
+    Noto Color Emoji;
+  line-height: 1.5;
+  tab-size: 4;
+  scroll-behavior: smooth;
+  height: 100vh;
+}
+body {
+  font-family: inherit;
+  line-height: inherit;
+  margin: 0;
+  height: 100%;
+}
+
+#__next {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.app {
+  height: 100%;
+}
+
+a {
+  color: blue;
+  text-decoration: none; /* no underline */
+}

@@ -1,8 +1,0 @@
-canvas {
-  font-smooth: never;
-  -webkit-font-smoothing: none;
-}
-.column-header:hover {
-  background: rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-}

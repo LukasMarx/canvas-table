@@ -1,0 +1,13 @@
+# Add files here to ignore them from prettier formatting
+
+/dist
+/coverage
+.docusaurus/
+
+/apps/docs/node_modules
+/apps/docs/public
+/apps/docs/.cache
+
+/apps/docs/node_modules
+/apps/docs/public
+/apps/docs/.cache
