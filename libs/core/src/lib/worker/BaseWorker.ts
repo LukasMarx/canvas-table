@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-globals */
 import { IFormatter } from '../formatter/IFormatter';
 import { Grid } from '../Grid';
 import { WorkerMessage, WorkerOnEventMessage } from '../types/WorkerMessage';

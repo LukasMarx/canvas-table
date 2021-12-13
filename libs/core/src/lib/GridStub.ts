@@ -1,3 +1,4 @@
+import { RenderingContext2D } from 'canvg';
 import debounce from 'lodash.debounce';
 import throttle from 'lodash.throttle';
 import { v4 } from 'uuid';
@@ -22,22 +23,24 @@ export function createGrid(
     }
   >,
   useSingleWorker?: boolean
-) {
+): GridStub | Grid | undefined {
   if (isOffscreenCanvasSupported()) {
     if (useSingleWorker || canvases.length > 1) {
       const workers: Worker[] = [];
-      for (let canvas of canvases) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      for (const canvas of canvases) {
         workers.push(
           new Worker(new URL('./worker/Worker.ts', import.meta.url))
         );
       }
       return new GridStub(workers, canvases, options);
     } else if (canvases.length) {
-      const ctx = canvases[0].getContext('2d')!;
+      const ctx = canvases[0].getContext('2d') as RenderingContext2D;
       return new Grid(ctx, canvases[0], formatters || {}, options);
     }
+    return undefined;
   } else {
-    const ctx = canvases[0].getContext('2d')!;
+    const ctx = canvases[0].getContext('2d') as RenderingContext2D;
     return new Grid(ctx, canvases[0], formatters || {}, options);
   }
 }
@@ -112,6 +115,10 @@ export class GridStub {
     });
   }
 
+  get data(): any[] | undefined {
+    return this._data;
+  }
+
   public get options(): GridOptions {
     return this._options;
   }
@@ -123,10 +130,6 @@ export class GridStub {
         options: value,
       });
     });
-  }
-
-  get data(): any[] | undefined {
-    return this._data;
   }
 
   private sendDimensions = debounce(() => {
@@ -227,7 +230,7 @@ export class GridStub {
   public onHeightChange: (height: number) => void = () => {};
 
   public onRowContextMenu: (
-    rowData: any,
+    rowData: Record<string, unknown>,
     column: ColumnConfig,
     rowIndex: number
   ) => void = () => {};

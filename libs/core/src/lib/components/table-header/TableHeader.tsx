@@ -227,6 +227,7 @@ export function TableHeader(props: TableHeaderProps): ReactElement {
               .map((column: any, index: number) => {
                 return (
                   <TableHeaderCell
+                    index={index}
                     key={column.field}
                     id={column.field}
                     title={column.field}

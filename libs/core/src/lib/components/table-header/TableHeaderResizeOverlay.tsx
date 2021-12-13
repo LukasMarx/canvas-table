@@ -1,6 +1,6 @@
-import throttle from "lodash.throttle";
-import React, { ReactElement, useEffect, useLayoutEffect, useRef } from "react";
-import { ColumnConfig } from "../../types/ColumnConfig";
+import throttle from 'lodash.throttle';
+import React, { ReactElement, useEffect, useLayoutEffect, useRef } from 'react';
+import { ColumnConfig } from '../../types/ColumnConfig';
 
 interface TableHeaderResizeOverlayProps {
   absolteColumnConfig: ColumnConfig[];
@@ -43,7 +43,7 @@ export function TableHeaderResizeOverlay(
       const difference =
         relativeMousePositionX - (resizeColumnLeft.current || 0);
       const newColumnConfig = [...(columnConfigRef.current || [])];
-      newColumnConfig[resizeIndex.current!].width = difference;
+      newColumnConfig[resizeIndex.current || 0].width = difference;
       onColumnsChangeRef.current?.(newColumnConfig);
     }, 16)
   );
@@ -61,14 +61,14 @@ export function TableHeaderResizeOverlay(
         resizeColumnLeft.current += column.width || 0;
         i += 1;
       }
-      window.removeEventListener("mousemove", handleResizeMouseMove.current);
-      window.addEventListener("mousemove", handleResizeMouseMove.current);
+      window.removeEventListener('mousemove', handleResizeMouseMove.current);
+      window.addEventListener('mousemove', handleResizeMouseMove.current);
     }
   );
 
   useEffect(() => {
-    window.addEventListener("mouseup", () => {
-      window.removeEventListener("mousemove", handleResizeMouseMove.current);
+    window.addEventListener('mouseup', () => {
+      window.removeEventListener('mousemove', handleResizeMouseMove.current);
     });
   }, []);
 
@@ -76,20 +76,20 @@ export function TableHeaderResizeOverlay(
     <div
       ref={ref}
       style={{
-        position: "absolute",
+        position: 'absolute',
         height: props.height,
-        float: "left",
-        pointerEvents: "none",
+        float: 'left',
+        pointerEvents: 'none',
         top: 0,
       }}
     >
       <div
         style={{
-          position: "relative",
+          position: 'relative',
           height: props.height,
-          float: "left",
-          pointerEvents: "none",
-          whiteSpace: "nowrap",
+          float: 'left',
+          pointerEvents: 'none',
+          whiteSpace: 'nowrap',
           transform: `translateX(-${props.scrollLeft}px)`,
         }}
       >
@@ -100,19 +100,19 @@ export function TableHeaderResizeOverlay(
               style={{
                 width: column.width,
                 height: props.height,
-                display: "inline-block",
-                pointerEvents: "none",
-                position: "relative",
+                display: 'inline-block',
+                pointerEvents: 'none',
+                position: 'relative',
               }}
             >
               <div
                 style={{
-                  position: "absolute",
+                  position: 'absolute',
                   right: 0,
                   width: 5,
-                  height: "100%",
-                  pointerEvents: "all",
-                  cursor: "ew-resize",
+                  height: '100%',
+                  pointerEvents: 'all',
+                  cursor: 'ew-resize',
                 }}
                 onMouseDown={(e) =>
                   handleResizeMouseDown.current(column, index)

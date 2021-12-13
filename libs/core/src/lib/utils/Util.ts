@@ -1,4 +1,4 @@
-import { ColumnConfig } from "../types/ColumnConfig";
+import { ColumnConfig } from '../types/ColumnConfig';
 
 export function calculateColumnWidths(
   columns: ColumnConfig[],
@@ -6,27 +6,16 @@ export function calculateColumnWidths(
   ratio: number
 ): number[] {
   let distributeableSpace = width;
-  let numOfAbsoluteColumns = 0;
   let numOfRelativeColumns = 0;
   for (const column of columns) {
     if (column.width != null) {
       distributeableSpace -= column.width;
-      numOfAbsoluteColumns += 1;
     } else {
       numOfRelativeColumns += 1;
     }
   }
 
   const widths = [];
-  // for (const column of columns) {
-  //   if (column.pinned) {
-  //     if (column.width != null) {
-  //       widths.push(Math.floor(column.width));
-  //     } else {
-  //       widths.push(Math.floor(distributeableSpace / numOfRelativeColumns));
-  //     }
-  //   }
-  // }
   for (const column of columns) {
     if (column.width != null) {
       widths.push(Math.floor(column.width));

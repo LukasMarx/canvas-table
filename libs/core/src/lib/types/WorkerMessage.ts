@@ -1,6 +1,5 @@
-import { ColumnConfig } from "./ColumnConfig";
-import { DeepPartial } from "./DeepPartial";
-import { GridOptions } from "./Grid";
+import { ColumnConfig } from './ColumnConfig';
+import { GridOptions } from './Grid';
 
 export type WorkerMessage =
   | WorkerInitMessage
@@ -14,7 +13,7 @@ export type WorkerMessage =
   | WorkerSetColumnsMessage;
 
 export interface WorkerInitMessage {
-  type: "init";
+  type: 'init';
   canvas: HTMLCanvasElement;
   data?: any[];
   columns?: ColumnConfig[];
@@ -22,49 +21,49 @@ export interface WorkerInitMessage {
 }
 
 export interface WorkerSetDataMessage {
-  type: "setData";
+  type: 'setData';
   data: any[];
 }
 
 export interface WorkerSetColumnsMessage {
-  type: "setColumns";
+  type: 'setColumns';
   columns: any[];
 }
 export interface WorkerSetOptionsMessage {
-  type: "setOptions";
+  type: 'setOptions';
   options: GridOptions;
 }
 
 export interface WorkerRedrawMessage {
-  type: "redraw";
+  type: 'redraw';
 }
 
 export interface WorkerSetDimensionMessage {
-  type: "setDimensions";
+  type: 'setDimensions';
   width: number;
   height: number;
 }
 
 export interface WorkerSetScrollPositionMessage {
-  type: "setScrollPosition";
+  type: 'setScrollPosition';
   left: number;
   top: number;
 }
 
 export interface WorkerFireOnClickMessage {
-  type: "onClick";
+  type: 'onClick';
   left: number;
   top: number;
   shiftKey?: boolean;
 }
 export interface WorkerFireOnRowContextMenuMessage {
-  type: "onRowContextMenu";
+  type: 'onRowContextMenu';
   left: number;
   top: number;
 }
 
 export interface WorkerOnEventMessage {
-  type: "onEvent";
+  type: 'onEvent';
   eventType: string;
   args: any[];
 }

@@ -1,17 +1,17 @@
-import { ColumnConfig } from "./types/ColumnConfig";
-import { RowClickEvent } from "./types/Events";
-import { v4 } from "uuid";
-import { GridOptions } from "./types/Grid";
-import { IFormatter } from "./formatter/IFormatter";
-import { createNewSortInstance } from "fast-sort";
-import { get } from "object-path";
+import { ColumnConfig } from './types/ColumnConfig';
+import { RowClickEvent } from './types/Events';
+import { v4 } from 'uuid';
+import { GridOptions } from './types/Grid';
+import { IFormatter } from './formatter/IFormatter';
+import { createNewSortInstance } from 'fast-sort';
+import { get } from 'object-path';
 
 export class BaseGrid {
   protected canvas: any;
   private _data: any[] | undefined;
   private _rowHeight = 32;
-  private _width: number = 0;
-  private _height: number = 0;
+  private _width = 0;
+  private _height = 0;
   private _scrollTop = 0;
   private _scrollLeft = 0;
   private _columnConfig?: ColumnConfig[] | undefined;
@@ -60,7 +60,7 @@ export class BaseGrid {
   private listeners: Record<string, Record<string, any>> = {};
 
   public addEventListener(
-    name: "cellClick" | "rowClick" | "rowContextMenu",
+    name: 'cellClick' | 'rowClick' | 'rowContextMenu',
     callback: (e: RowClickEvent) => void
   ): string {
     if (!this.listeners[name]) {
@@ -93,9 +93,9 @@ export class BaseGrid {
       if (column.sortIndex !== undefined) {
         const formatter = column.formatter
           ? this.formatters[column.formatter]
-          : this.formatters["default"] || this.formatters["default"];
+          : this.formatters['default'] || this.formatters['default'];
         if (
-          column.sortDirection === "asc" ||
+          column.sortDirection === 'asc' ||
           column.sortDirection === undefined
         )
           result[column.sortIndex] = {
@@ -107,10 +107,10 @@ export class BaseGrid {
               ),
             comparer: new Intl.Collator(undefined, {
               numeric: true,
-              sensitivity: "base",
+              sensitivity: 'base',
             }).compare,
           };
-        if (column.sortDirection === "desc")
+        if (column.sortDirection === 'desc')
           result[column.sortIndex] = {
             desc: (u: any) =>
               formatter.toText(
@@ -120,7 +120,7 @@ export class BaseGrid {
               ),
             comparer: new Intl.Collator(undefined, {
               numeric: true,
-              sensitivity: "base",
+              sensitivity: 'base',
             }).compare,
           };
       }
@@ -242,14 +242,14 @@ export class BaseGrid {
   }
 
   public removeLister(
-    name: "cellClick" | "rowClick" | "rowContextMenu",
+    name: 'cellClick' | 'rowClick' | 'rowContextMenu',
     id: string
   ) {
     delete this.listeners[name]?.[id];
   }
 
   protected fireEvent(
-    name: "cellClick" | "rowClick" | "rowContextMenu",
+    name: 'cellClick' | 'rowClick' | 'rowContextMenu',
     ...args: any[]
   ) {
     for (const callback of Object.values(this.listeners[name] || [])) {
@@ -258,26 +258,22 @@ export class BaseGrid {
   }
 
   public get backgroundColorSelection(): string {
-    return this.options.theme?.palette?.backgroundColorSelected!;
+    return this.options.theme?.palette?.backgroundColorSelected;
   }
 
   public get backgroundColor(): string {
-    return this.options.theme?.palette?.backgroundColor!;
+    return this.options.theme?.palette?.backgroundColor;
   }
 
   public get textColor(): string {
-    return this.options.theme?.palette?.textColor!;
+    return this.options.theme?.palette?.textColor;
   }
 
   public get textColorSelected(): string {
-    return this.options.theme?.palette?.textColorSelected!;
+    return this.options.theme?.palette?.textColorSelected;
   }
 
   protected columnWidths: number[] = [];
-
-  public get columnConfig(): ColumnConfig[] | undefined {
-    return this._columnConfig;
-  }
 
   private doesRequireFullUpdate(
     oldValue?: ColumnConfig[],
@@ -296,6 +292,10 @@ export class BaseGrid {
       }
     });
     return result;
+  }
+
+  public get columnConfig(): ColumnConfig[] | undefined {
+    return this._columnConfig;
   }
 
   public set columnConfig(value: ColumnConfig[] | undefined) {

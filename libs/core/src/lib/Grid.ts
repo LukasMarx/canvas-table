@@ -1,10 +1,10 @@
-import { BaseGrid } from "./BaseGrid";
-import { drawTextInCell } from "./formatter/FormatterUtils";
-import { IFormatter } from "./formatter/IFormatter";
-import { ColumnConfig } from "./types/ColumnConfig";
-import { RowClickEvent } from "./types/Events";
-import { GridOptions } from "./types/Grid";
-import { calculateColumnWidths } from "./utils/Util";
+import { BaseGrid } from './BaseGrid';
+import { drawTextInCell } from './formatter/FormatterUtils';
+import { IFormatter } from './formatter/IFormatter';
+import { ColumnConfig } from './types/ColumnConfig';
+import { RowClickEvent } from './types/Events';
+import { GridOptions } from './types/Grid';
+import { calculateColumnWidths } from './utils/Util';
 
 const ratio = 2;
 
@@ -108,14 +108,14 @@ export class Grid extends BaseGrid {
     }
 
     const args: RowClickEvent = {
-      column: columnConfig!,
-      columnIndex: cellIndex!,
+      column: columnConfig as ColumnConfig,
+      columnIndex: cellIndex !== undefined ? cellIndex : -1,
       rowData: rowData,
       rowIndex: rowIndex,
       left: options.left,
       top: options.top,
     };
-    this.fireEvent("rowClick", args);
+    this.fireEvent('rowClick', args);
 
     if (options.shiftKey) {
       const newSelection = { ...this.selectionKeys };
@@ -127,25 +127,23 @@ export class Grid extends BaseGrid {
   }
 
   private handleContextMenu(options: { left: number; top: number }) {
-    const {
-      index: rowIndex,
-      row: rowData,
-      level,
-    } = this.getRowAtPosition(options.top);
+    const { index: rowIndex, row: rowData } = this.getRowAtPosition(
+      options.top
+    );
 
     const { index: cellIndex, column: columnConfig } = this.getColumnAtPosition(
       options.left
     );
 
     const args: RowClickEvent = {
-      column: columnConfig!,
-      columnIndex: cellIndex!,
+      column: columnConfig as ColumnConfig,
+      columnIndex: cellIndex !== undefined ? cellIndex : -1,
       rowData: rowData,
       rowIndex: rowIndex,
       left: options.left,
       top: options.top,
     };
-    this.fireEvent("rowContextMenu", args);
+    this.fireEvent('rowContextMenu', args);
   }
 
   redraw() {
@@ -215,7 +213,7 @@ export class Grid extends BaseGrid {
 
   resetFont(ctx: CanvasRenderingContext2D) {
     const fontWeight = this.options?.theme?.font?.weight;
-    const fontSize = this.options.theme?.font?.size + "px";
+    const fontSize = this.options.theme?.font?.size + 'px';
     const fontVariant = this.options.theme?.font?.variant;
     const fontStyle = this.options.theme?.font?.style;
     const fontFamiliy = this.options.theme?.font?.familiy;
@@ -389,7 +387,7 @@ export class Grid extends BaseGrid {
       rowTop,
       10000,
       this.rowHeight,
-      "left"
+      'left'
     );
     this.ctx.closePath();
   }
@@ -433,7 +431,7 @@ export class Grid extends BaseGrid {
   ) {
     const formatter = column.formatter
       ? this.formatters[column.formatter]
-      : this.formatters["default"] || this.formatters["default"];
+      : this.formatters['default'] || this.formatters['default'];
     formatter?.formatTableCell(
       this.ctx,
       value,
