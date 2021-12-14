@@ -1,5 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const withNx = require('@nrwl/next/plugins/with-nx');
+const _ = require('lodash');
 
 /**
  * @type {import('@nrwl/next/plugins/with-nx').WithNxOptions}
@@ -21,7 +22,16 @@ const nextConfig = {
         permanent: true,
       },
     ]
-  }
+  },
+  webpack: (config) => {
+    _.set(
+      config,
+      'optimization.splitChunks.cacheGroups.commons.chunks',
+      'initial'
+    );
+
+    return config;
+  },
 };
 
 module.exports = withNx(nextConfig);

@@ -22,6 +22,13 @@
       }
     },
     {
+      // fix for next.js linter bug: https://github.com/vercel/next.js/issues/28030
+      "files": ["**/types/nextJS.ts"],
+      "rules": {
+         " @next/next/no-document-import-in-page": "off",
+      }
+    } ,
+    {
       "files": ["*.ts", "*.tsx"],
       "extends": ["plugin:@nrwl/nx/typescript"],
       "rules": {}
