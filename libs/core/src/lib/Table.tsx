@@ -35,7 +35,7 @@ interface TableProps {
   onColumnHeaderContextMenu?(
     column: ColumnConfig,
     index: number,
-    e: MouseEvent
+    clickPosition: { left: number; top: number }
   ): void;
   onRowContextMenu?(
     rowData: any,
@@ -213,9 +213,11 @@ export function Table(props: TableProps): ReactElement {
         gridRef.current?.addEventListener(
           'rowContextMenu',
           (e: RowClickEvent) => {
+            const boundingClientRect =
+              fakeScroll.current?.getBoundingClientRect();
             props.onRowContextMenu?.(e.rowData, e.column, e.columnIndex, {
-              left: e.left,
-              top: e.top,
+              left: (boundingClientRect?.x || 0) + e.left,
+              top: (boundingClientRect?.y || 0) + e.top,
             });
           }
         );
@@ -307,7 +309,12 @@ export function Table(props: TableProps): ReactElement {
 
   const handleTableHeaderContextMenu = useCallback(
     (column: ColumnConfig, index: number, e: React.MouseEvent) => {
-      props.onColumnHeaderContextMenu?.(column, index, e);
+      e.preventDefault();
+      e.stopPropagation();
+      props.onColumnHeaderContextMenu?.(column, index, {
+        left: e.clientX,
+        top: e.clientY,
+      });
     },
     []
   );

@@ -13,6 +13,7 @@ import ManyCells from '../../demos/ManyCells';
 import Grouping from '../../demos/Grouping';
 import Theming from '../../demos/Theming';
 import Tree from '../../demos/Tree';
+import ContextMenuDemo from 'apps/docs/demos/ContextMenu';
 
 export default function Doc({ meta, content, docs }) {
   const [mdxModule, setMdxModule] = useState<any>();
@@ -36,6 +37,7 @@ export default function Doc({ meta, content, docs }) {
             Grouping: Grouping,
             Theming: Theming,
             Tree: Tree,
+            ContextMenuDemo: ContextMenuDemo,
           }}
         />
       )}
