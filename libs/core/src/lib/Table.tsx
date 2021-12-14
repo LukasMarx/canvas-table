@@ -32,6 +32,7 @@ interface TableProps {
   options?: DeepPartial<GridOptions>;
   threadCount?: number;
   useSingleWorker?: boolean;
+  query?: string;
   onColumnHeaderContextMenu?(
     column: ColumnConfig,
     index: number,
@@ -255,6 +256,12 @@ export function Table(props: TableProps): ReactElement {
       grid.options = options;
     }
   }, [grid, options]);
+
+  useEffect(() => {
+    if (grid) {
+      grid.query = props.query;
+    }
+  }, [grid, props.query]);
 
   useEffect(() => {
     if (grid) {

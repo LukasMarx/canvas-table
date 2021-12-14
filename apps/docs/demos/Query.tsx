@@ -9,11 +9,7 @@ const TableWrapper = styled.div`
   height: 500px;
 `;
 
-const options: Partial<GridOptions> = {
-  dataTree: true,
-};
-
-function Tree() {
+function QueryDemo() {
   const [columnConfig, setColumnConfig] = useState(Columns10KPinned);
   const [query, setQuery] = useState('');
 
@@ -22,7 +18,6 @@ function Tree() {
       <Table
         data={Data10k as object[]}
         columns={columnConfig}
-        options={options}
         onColumnsChange={setColumnConfig}
         threadCount={1}
         query={query}
@@ -45,4 +40,4 @@ function Tree() {
   );
 }
 
-export default Tree;
+export default QueryDemo;

@@ -14,6 +14,7 @@ import Grouping from '../../demos/Grouping';
 import Theming from '../../demos/Theming';
 import Tree from '../../demos/Tree';
 import ContextMenuDemo from 'apps/docs/demos/ContextMenu';
+import QueryDemo from 'apps/docs/demos/Query';
 
 export default function Doc({ meta, content, docs }) {
   const [mdxModule, setMdxModule] = useState<any>();
@@ -38,6 +39,7 @@ export default function Doc({ meta, content, docs }) {
             Theming: Theming,
             Tree: Tree,
             ContextMenuDemo: ContextMenuDemo,
+            QueryDemo: QueryDemo,
           }}
         />
       )}

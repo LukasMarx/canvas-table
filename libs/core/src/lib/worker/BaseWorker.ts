@@ -72,6 +72,12 @@ export function initializeWorker(
           grid.data = data;
         }
       }
+      if (evt.data.type === 'setQuery') {
+        const query = evt.data.query;
+        if (grid) {
+          grid.query = query;
+        }
+      }
       if (evt.data.type === 'onClick') {
         if (grid) {
           grid.fireClickEvent({

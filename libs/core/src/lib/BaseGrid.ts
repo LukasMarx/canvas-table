@@ -5,6 +5,7 @@ import { GridOptions } from './types/Grid';
 import { IFormatter } from './formatter/IFormatter';
 import { createNewSortInstance } from 'fast-sort';
 import { get } from 'object-path';
+import { execPath } from 'process';
 
 export class BaseGrid {
   protected canvas: any;
@@ -23,6 +24,8 @@ export class BaseGrid {
   private _expandedIndizes: Record<number, boolean> = {};
   private _calculatedData: { level: number; data: any }[] = [];
   private _options: GridOptions;
+  private _query: string | undefined;
+
   protected formatters: Record<string, IFormatter<any>> = {};
   protected fastSortScheme: any;
 
@@ -143,10 +146,55 @@ export class BaseGrid {
     return this.sorter(allData).by(this.fastSortScheme);
   }
 
+  filterData(allData: any[]) {
+    const expandedKeys: Record<string, boolean> = {};
+    let rowCount: number = 0;
+    let rows: any[] = [];
+    if (this.query) {
+      for (const row of allData) {
+        for (const column of this.columnConfig || []) {
+          const formatter = column.formatter
+            ? this.formatters[column.formatter]
+            : this.formatters['default'] || this.formatters['default'];
+          const value = formatter.toText(
+            row[column.field],
+            column.formatterParams || {},
+            {
+              gridOptions: this.options,
+            }
+          );
+
+          if (value && value.includes(this.query)) {
+            rowCount += 1;
+            rows.push(row);
+            break;
+          }
+        }
+        if ((this.options.dataTree || this.options.groupBy) && row.children) {
+          const { rowCount: newRowCount, expandedKeys: expKeys } =
+            this.filterData(row.children);
+          if (newRowCount) {
+            rowCount += newRowCount;
+            const key = this.buildSelectionKeys(row);
+            expandedKeys[key] = true;
+            rows.push(row);
+          }
+          Object.keys(expKeys).forEach((key) => (expandedKeys[key] = true));
+        }
+      }
+    } else {
+      return { rows: allData };
+    }
+    return { rows, rowCount, expandedKeys };
+  }
+
   caculateData(allData: any[], level = 0, index = 0) {
     const result: any[] = [];
     const indizes: Record<number, boolean> = {};
-    const sortedData = this.sortData(allData);
+    const sortedData =
+      level > 0
+        ? this.sortData(this.filterData(allData).rows)
+        : this.sortData(allData);
     for (const data of sortedData || []) {
       result.push({ level, data });
       const key = this.buildSelectionKeys(data);
@@ -370,6 +418,28 @@ export class BaseGrid {
     this.calculateSelection();
     this.onHeightChange(this.calculatedData.length * this.rowHeight);
     this.redraw();
+  }
+
+  public get query(): string | undefined {
+    return this._query;
+  }
+  public set query(value: string | undefined) {
+    if (this._query !== value) {
+      this._query = value;
+      const { rows: filteredData, expandedKeys } = this.filterData(
+        this.data || []
+      );
+      if (expandedKeys) {
+        this._expandedKeys = expandedKeys;
+      }
+
+      const { openIndizes, rows } = this.caculateData(filteredData);
+      this.expandedIndizes = openIndizes;
+      this.calculatedData = rows;
+      this.calculateSelection();
+      this.onHeightChange(this.calculatedData.length * this.rowHeight);
+      this.redraw();
+    }
   }
 
   protected calculateColumnWidths(columns: ColumnConfig[]) {}

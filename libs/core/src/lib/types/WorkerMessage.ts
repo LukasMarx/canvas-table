@@ -7,6 +7,7 @@ export type WorkerMessage =
   | WorkerSetDimensionMessage
   | WorkerSetScrollPositionMessage
   | WorkerFireOnClickMessage
+  | WorkerSetQueryMessage
   | WorkerFireOnRowContextMenuMessage
   | WorkerSetOptionsMessage
   | WorkerRedrawMessage
@@ -48,6 +49,11 @@ export interface WorkerSetScrollPositionMessage {
   type: 'setScrollPosition';
   left: number;
   top: number;
+}
+
+export interface WorkerSetQueryMessage {
+  type: 'setQuery';
+  query: string | undefined;
 }
 
 export interface WorkerFireOnClickMessage {

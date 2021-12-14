@@ -4,22 +4,22 @@ export interface GridOptions {
     font: {
       familiy: string;
       size: number;
-      style: "normal" | "italic" | "oblique";
-      variant: "normal" | "small-caps";
+      style: 'normal' | 'italic' | 'oblique';
+      variant: 'normal' | 'small-caps';
       weight:
-        | "normal"
-        | "bold"
-        | "bolder"
-        | "lighter"
-        | "100"
-        | "200"
-        | "300"
-        | "400"
-        | "500"
-        | "600"
-        | "700"
-        | "800"
-        | "900";
+        | 'normal'
+        | 'bold'
+        | 'bolder'
+        | 'lighter'
+        | '100'
+        | '200'
+        | '300'
+        | '400'
+        | '500'
+        | '600'
+        | '700'
+        | '800'
+        | '900';
     };
     palette: {
       textColor: string;
@@ -33,6 +33,7 @@ export interface GridOptions {
       groupHeaderTextColor: string;
       headerTextColorDragging: string;
       lineColor: string;
+      queryMarkerColor: string;
     };
     spacing: {
       cellPaddingLeft: number;

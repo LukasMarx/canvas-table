@@ -440,7 +440,7 @@ export class Grid extends BaseGrid {
       width,
       rowHeight || this.rowHeight,
       column.formatterParams || emptyFormatterParams,
-      { gridOptions: this.options }
+      { gridOptions: this.options, query: this.query }
     );
   }
 }

@@ -1,10 +1,11 @@
-import { GridOptions } from "../types/Grid";
+import { GridOptions } from '../types/Grid';
 
 export interface IFormatterParams {
-  alignHorizontal?: "left" | "center" | "right" | "start" | "end";
+  alignHorizontal?: 'left' | 'center' | 'right' | 'start' | 'end';
 }
 export interface IFormatterContext {
   gridOptions: GridOptions;
+  query?: string;
 }
 
 export interface IFormatter<T> {

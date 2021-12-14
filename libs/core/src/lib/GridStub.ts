@@ -55,6 +55,7 @@ export class GridStub {
   private _left = 0;
   private _top = 0;
   private workers: Worker[] = [];
+  private _query: string | undefined;
 
   public nextWorker = 0;
 
@@ -222,6 +223,21 @@ export class GridStub {
       this._top = value;
       this.sendScrollPosition();
       this.sendLastScrollPosition();
+    }
+  }
+
+  public get query(): string | undefined {
+    return this._query;
+  }
+  public set query(value: string | undefined) {
+    if (this._query !== value) {
+      this._query = value;
+      this.workers.forEach((worker) => {
+        worker.postMessage({
+          type: 'setQuery',
+          query: value,
+        });
+      });
     }
   }
 

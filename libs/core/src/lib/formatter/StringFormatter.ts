@@ -1,5 +1,5 @@
-import { drawTextInCell } from "./FormatterUtils";
-import { IFormatter, IFormatterParams } from "./IFormatter";
+import { drawTextInCell } from './FormatterUtils';
+import { IFormatter, IFormatterContext, IFormatterParams } from './IFormatter';
 
 export class StringFormatter implements IFormatter<string> {
   toText(
@@ -7,7 +7,7 @@ export class StringFormatter implements IFormatter<string> {
     params: IFormatterParams,
     context: Record<string, any>
   ) {
-    return value;
+    return value ? value.toString() : '';
   }
 
   formatTableCell(
@@ -18,9 +18,22 @@ export class StringFormatter implements IFormatter<string> {
     width: number,
     rowHeight: number,
     params: IFormatterParams,
-    context: Record<string, any>
+    context: IFormatterContext
   ) {
     if (value) {
+      value = value.toString();
+      if (context.query && value && value.includes(context.query)) {
+        const split = value.split(context.query);
+        const start = ctx.measureText(split[0]);
+        const width = ctx.measureText(context.query);
+        let fontHeight =
+          start.fontBoundingBoxAscent + start.fontBoundingBoxDescent;
+        const textTop = top + (rowHeight - fontHeight) / 2;
+        ctx.save();
+        ctx.fillStyle = context.gridOptions.theme.palette.queryMarkerColor;
+        ctx.fillRect(x + start.width + 8, textTop, width.width, fontHeight + 4);
+        ctx.restore();
+      }
       drawTextInCell(
         ctx,
         value,
@@ -28,7 +41,7 @@ export class StringFormatter implements IFormatter<string> {
         top,
         width,
         rowHeight,
-        params.alignHorizontal || "left"
+        params.alignHorizontal || 'left'
       );
     }
   }
