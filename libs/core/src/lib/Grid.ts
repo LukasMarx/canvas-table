@@ -178,7 +178,25 @@ export class Grid extends BaseGrid {
     this.ctx.beginPath();
     activeData?.forEach((datapoint, index) => {
       const y = Math.floor(index * this.rowHeight - offsetTop);
-      this.drawRow(firstIndex + index, y);
+      const absoluteIndex = firstIndex + index;
+      console.log(this.draggedRowIndex);
+      let offset = 0;
+      if (this.draggedRowIndex === absoluteIndex) {
+        return;
+      }
+      if (
+        this.draggedRowIndex !== undefined &&
+        this.draggedRowIndex < absoluteIndex
+      ) {
+        offset -= this.rowHeight;
+      }
+      if (this.draggedRowInsertionIndex !== undefined) {
+        if (this.draggedRowInsertionIndex < absoluteIndex) {
+          offset += this.rowHeight;
+        }
+      }
+
+      this.drawRow(this.ctx, absoluteIndex, y + offset);
     });
     this.ctx.closePath();
     this.ctx.beginPath();
@@ -222,24 +240,23 @@ export class Grid extends BaseGrid {
     ctx.font = font;
   }
 
-  drawRow(absoluteIndex: number, y: number) {
+  drawRow(ctx: CanvasRenderingContext2D, absoluteIndex: number, y: number) {
     if (this.selectionIndizes[absoluteIndex]) {
-      this.ctx.fillStyle = this.backgroundColorSelection;
-      this.ctx.fillRect(0, y, this.ctx.canvas.width, this.rowHeight);
+      ctx.fillStyle = this.backgroundColorSelection;
+      ctx.fillRect(0, y, ctx.canvas.width, this.rowHeight);
     } else {
-      this.ctx.fillStyle = this.backgroundColor;
-      this.ctx.fillRect(0, y, this.ctx.canvas.width, this.rowHeight);
+      ctx.fillStyle = this.backgroundColor;
+      ctx.fillRect(0, y, ctx.canvas.width, this.rowHeight);
     }
     const row = this.calculatedData[absoluteIndex].data;
     if (row.__isGroup) {
-      this.ctx.fillStyle =
-        this.options.theme.palette.groupHeaderBackgroundColor;
-      this.ctx.fillRect(0, y, this.ctx.canvas.width, this.rowHeight);
+      ctx.fillStyle = this.options.theme.palette.groupHeaderBackgroundColor;
+      ctx.fillRect(0, y, ctx.canvas.width, this.rowHeight);
     }
-    this.ctx.strokeStyle = row.__isGroup
+    ctx.strokeStyle = row.__isGroup
       ? this.options.theme.palette.groupHeaderTextColor
       : this.textColor;
-    this.ctx.fillStyle = row.__isGroup
+    ctx.fillStyle = row.__isGroup
       ? this.options.theme.palette.groupHeaderTextColor
       : this.textColor;
 
@@ -253,6 +270,7 @@ export class Grid extends BaseGrid {
       (hasChildren && row.__isGroup)
     ) {
       this.drawTreeControl(
+        ctx,
         this.expandedIndizes[absoluteIndex],
         paddingLeft - this.scrollLeft + level * this.treeControlWidth,
         y
@@ -265,6 +283,7 @@ export class Grid extends BaseGrid {
 
     if (this.options.dataTree && (!hasChildren || level > 0)) {
       this.drawTreeBranch(
+        ctx,
         -12 - this.scrollLeft + level * this.treeControlWidth,
         y
       );
@@ -272,16 +291,18 @@ export class Grid extends BaseGrid {
 
     // draw a second time for frozen columns
     const { offset: pinnedColumnOffset } = this.drawFrozenColumns(
+      ctx,
       row,
       y,
       offsetLeft,
       paddingRight
     );
 
-    this.drawColumns(row, y, offsetLeft, paddingRight, pinnedColumnOffset);
+    this.drawColumns(ctx, row, y, offsetLeft, paddingRight, pinnedColumnOffset);
   }
 
   private drawFrozenColumns(
+    ctx: CanvasRenderingContext2D,
     row: any,
     y: number,
     offsetLeft: number,
@@ -304,6 +325,7 @@ export class Grid extends BaseGrid {
           this.ctx.clip();
           this.ctx.beginPath();
           this.drawCell(
+            ctx,
             row?.[column.field],
             column,
             y,
@@ -324,6 +346,7 @@ export class Grid extends BaseGrid {
   }
 
   private drawColumns(
+    ctx: CanvasRenderingContext2D,
     row: any,
     y: number,
     offsetLeft: number,
@@ -344,13 +367,13 @@ export class Grid extends BaseGrid {
           (x + this.columnWidths[index] >= 0 &&
             x + this.columnWidths[index] <= ratioWidth)
         ) {
-          this.ctx.save();
+          ctx.save();
 
           let clipx = index === 0 ? x + offsetLeft : x;
           if (clipx < pinnedColumnOffset) {
             clipx = pinnedColumnOffset;
           }
-          this.ctx.rect(
+          ctx.rect(
             clipx,
             y,
             index === 0
@@ -358,10 +381,11 @@ export class Grid extends BaseGrid {
               : this.columnWidths[index],
             this.rowHeight
           );
-          this.ctx.clip();
-          this.ctx.beginPath();
-          this.resetFont(this.ctx);
+          ctx.clip();
+          ctx.beginPath();
+          this.resetFont(ctx);
           this.drawCell(
+            ctx,
             row[column.field],
             column,
             y,
@@ -370,8 +394,8 @@ export class Grid extends BaseGrid {
               ? this.columnWidths[index] - paddingRight - offsetLeft
               : this.columnWidths[index] - paddingRight
           );
-          this.ctx.closePath();
-          this.ctx.restore();
+          ctx.closePath();
+          ctx.restore();
         }
         x += this.columnWidths[index];
       });
@@ -392,36 +416,42 @@ export class Grid extends BaseGrid {
     this.ctx.closePath();
   }
 
-  drawTreeControl(open: boolean, x: number, rowTop: any) {
-    this.ctx.beginPath();
+  drawTreeControl(
+    ctx: CanvasRenderingContext2D,
+    open: boolean,
+    x: number,
+    rowTop: any
+  ) {
+    ctx.beginPath();
     const center = Math.floor(rowTop + this.rowHeight / 2);
     if (open) {
-      this.ctx.moveTo(x, center);
-      this.ctx.lineTo(x + 10, center);
-      this.ctx.lineTo(x + 5, center + 5);
+      ctx.moveTo(x, center);
+      ctx.lineTo(x + 10, center);
+      ctx.lineTo(x + 5, center + 5);
     } else {
-      this.ctx.moveTo(x, center - 5);
-      this.ctx.lineTo(x + 5, center);
-      this.ctx.lineTo(x, center + 5);
+      ctx.moveTo(x, center - 5);
+      ctx.lineTo(x + 5, center);
+      ctx.lineTo(x, center + 5);
     }
 
-    this.ctx.fill();
-    this.ctx.closePath();
+    ctx.fill();
+    ctx.closePath();
   }
 
-  drawTreeBranch(x: number, rowTop: any) {
-    this.ctx.beginPath();
-    this.ctx.lineWidth = 1;
+  drawTreeBranch(ctx: CanvasRenderingContext2D, x: number, rowTop: any) {
+    ctx.beginPath();
+    ctx.lineWidth = 1;
     const bottom = rowTop + this.rowHeight / 2;
-    this.ctx.moveTo(x, rowTop + 5);
-    this.ctx.lineTo(x, bottom);
-    this.ctx.lineTo(x + 5, bottom);
+    ctx.moveTo(x, rowTop + 5);
+    ctx.lineTo(x, bottom);
+    ctx.lineTo(x + 5, bottom);
 
-    this.ctx.stroke();
-    this.ctx.closePath();
+    ctx.stroke();
+    ctx.closePath();
   }
 
   drawCell(
+    ctx: CanvasRenderingContext2D,
     value: any,
     column: ColumnConfig,
     top: any,
@@ -433,7 +463,7 @@ export class Grid extends BaseGrid {
       ? this.formatters[column.formatter]
       : this.formatters['default'] || this.formatters['default'];
     formatter?.formatTableCell(
-      this.ctx,
+      ctx,
       value,
       top,
       x,
@@ -442,5 +472,146 @@ export class Grid extends BaseGrid {
       column.formatterParams || emptyFormatterParams,
       { gridOptions: this.options, query: this.query }
     );
+  }
+
+  public startDraggingRowAtPosition(top: number) {
+    const firstIndex = this.scrollTop / this.rowHeight;
+    const index = top / this.rowHeight;
+    this.draggedRowIndex = Math.floor(firstIndex + index);
+  }
+
+  private arraymove(array: any[], fromIndex: number, toIndex: number) {
+    var element = array[fromIndex];
+    array.splice(fromIndex, 1);
+    array.splice(toIndex, 0, element);
+  }
+
+  public stopDraggingRow() {
+    const result = [...(this.data || [])];
+    if (
+      this.draggedRowInsertionIndex == undefined &&
+      this.draggedRowIndex == undefined
+    ) {
+      return;
+    }
+
+    if (!this.options.dataTree) {
+      if (
+        this.draggedRowInsertionIndex !== undefined &&
+        this.draggedRowIndex !== undefined
+      ) {
+        let toIndex = this.draggedRowInsertionIndex;
+        if (this.draggedRowInsertionIndex < (this.draggedRowIndex || 0)) {
+          toIndex += 1;
+        }
+        this.arraymove(result, this.draggedRowIndex, toIndex);
+      }
+    } else {
+      if (
+        this.draggedRowInsertionIndex !== undefined &&
+        this.draggedRowIndex !== undefined
+      ) {
+        let toIndex = this.draggedRowInsertionIndex + 1;
+        // if (this.draggedRowInsertionIndex < (this.draggedRowIndex || 0)) {
+        //   toIndex += 1;
+        // }
+        const fromData = this.calculatedData[this.draggedRowIndex];
+        let toData;
+        // if (this.expandedIndizes[toIndex]) {
+        //   toData = this.calculatedData[toIndex + 1];
+        // } else {
+        // }
+        toData = this.calculatedData[toIndex];
+        this.calculatedData[toIndex];
+
+        // Move from top-level to top-level
+        if (
+          fromData.parentIndex === undefined &&
+          fromData.parentIndex === toData.parentIndex
+        ) {
+          this.arraymove(
+            result,
+            this.draggedRowIndex,
+            Math.max(
+              this.draggedRowInsertionIndex > (this.draggedRowIndex || 0)
+                ? toIndex - 1
+                : toIndex,
+              0
+            )
+          );
+        }
+
+        // Move inside same parent
+        if (
+          fromData.parentIndex !== undefined &&
+          fromData.parentIndex === toData.parentIndex
+        ) {
+          this.arraymove(
+            fromData.parent.children,
+            fromData.indexInParent!,
+            Math.max(
+              this.draggedRowInsertionIndex > (this.draggedRowIndex || 0)
+                ? toData.indexInParent! - 1
+                : toData.indexInParent!,
+              0
+            )
+          );
+        }
+
+        // Move from one parent to another parent
+        if (fromData.parentIndex !== toData.parentIndex) {
+          (fromData.parent ? fromData.parent.children : result).splice(
+            fromData.indexInParent !== undefined
+              ? fromData.indexInParent
+              : this.draggedRowIndex,
+            1
+          );
+          if (
+            this.expandedIndizes[toIndex] &&
+            toIndex === fromData.parentIndex
+          ) {
+            (toData.parent ? toData.parent.children : result).splice(
+              this.calculatedData[Math.max(toIndex - 1, 0)].indexInParent !==
+                undefined
+                ? toData.indexInParent
+                : toIndex,
+              0,
+              fromData.data
+            );
+          } else {
+            (toData.parent ? toData.parent.children : result).splice(
+              toData.indexInParent !== undefined
+                ? toData.indexInParent
+                : toIndex,
+              0,
+              fromData.data
+            );
+          }
+        }
+      }
+    }
+    this.blockRedraw = true;
+    this.data = result;
+    this.draggedRowInsertionIndex = undefined;
+    this.draggedRowIndex = undefined;
+    this.onDataChange(result);
+    this.blockRedraw = false;
+  }
+
+  public dragRowToPosition(top: number) {
+    const firstIndex = this.scrollTop / this.rowHeight;
+    const index = top / this.rowHeight;
+    this.draggedRowInsertionIndex = Math.floor(firstIndex + index);
+    if (this.draggedRowInsertionIndex < (this.draggedRowIndex || 0)) {
+      this.draggedRowInsertionIndex -= 1;
+    }
+  }
+
+  public drawRowToCanvasAtPosition(canvas: HTMLCanvasElement, top: number) {
+    const firstIndex = this.scrollTop / this.rowHeight;
+    const index = top / this.rowHeight;
+    const context = canvas.getContext('2d')!;
+    context.setTransform(ratio, 0, 0, ratio, 0.5, 0.5);
+    this.drawRow(context, Math.floor(firstIndex + index), 0);
   }
 }

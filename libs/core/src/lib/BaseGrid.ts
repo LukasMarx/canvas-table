@@ -25,6 +25,8 @@ export class BaseGrid {
   private _calculatedData: { level: number; data: any }[] = [];
   private _options: GridOptions;
   private _query: string | undefined;
+  private _draggedRowIndex: number | undefined;
+  private _draggedRowInsertionIndex: number | undefined;
 
   protected formatters: Record<string, IFormatter<any>> = {};
   protected fastSortScheme: any;
@@ -54,10 +56,10 @@ export class BaseGrid {
   private rowMap = new WeakMap();
   private _buildSelectionKeys: (row: any) => string = (row) => {
     if (!this.rowMap.has(row)) {
-      this.rowMap.set(row, ++this.rowMapId);
+      this.rowMap.set(row, (++this.rowMapId).toString());
     }
 
-    return this.rowMap.get(row).toString();
+    return this.rowMap.get(row);
   };
 
   private listeners: Record<string, Record<string, any>> = {};
@@ -179,7 +181,9 @@ export class BaseGrid {
             expandedKeys[key] = true;
             rows.push(row);
           }
-          Object.keys(expKeys).forEach((key) => (expandedKeys[key] = true));
+          Object.keys(expKeys as any).forEach(
+            (key) => (expandedKeys[key] = true)
+          );
         }
       }
     } else {
@@ -188,7 +192,7 @@ export class BaseGrid {
     return { rows, rowCount, expandedKeys };
   }
 
-  caculateData(allData: any[], level = 0, index = 0) {
+  calculateData(allData: any[], level = 0, index = 0) {
     const result: any[] = [];
     const indizes: Record<number, boolean> = {};
     const sortedData =
@@ -204,11 +208,16 @@ export class BaseGrid {
           rows: subResult,
           openIndizes,
           index: newIndex,
-        } = this.caculateData(data.children, level + 1, index + 1);
+        } = this.calculateData(data.children, level + 1, index + 1);
         Object.keys(openIndizes).forEach(
           (i) => (indizes[parseInt(i, 10) as any] = true)
         );
-        subResult.forEach((res) => result.push(res));
+        subResult.forEach((res, i) => {
+          res.parent = data;
+          res.parentIndex = index;
+          res.indexInParent = i;
+          result.push(res);
+        });
         index = newIndex - 1;
       }
       index++;
@@ -218,16 +227,32 @@ export class BaseGrid {
 
   public onHeightChange: (height: number) => void = () => {};
 
+  public onDataChange: (data: any[]) => void = () => {};
+
   public onRowContextMenu: (
     rowData: any,
     column: ColumnConfig,
     rowIndex: number
   ) => void = () => {};
 
-  public get calculatedData(): { level: number; data: any }[] {
+  public get calculatedData(): {
+    level: number;
+    data: any;
+    parent?: any;
+    parentIndex?: number;
+    indexInParent?: number;
+  }[] {
     return this._calculatedData;
   }
-  private set calculatedData(value: { level: number; data: any }[]) {
+  private set calculatedData(
+    value: {
+      level: number;
+      data: any;
+      parent?: any;
+      parentIndex?: number;
+      indexInParent?: number;
+    }[]
+  ) {
     this._calculatedData = value;
   }
 
@@ -355,7 +380,7 @@ export class BaseGrid {
     this.calculateColumnWidths(value || []);
     if (doesRequireFullUpdate) {
       this.calculateFastSortScheme();
-      const { openIndizes, rows } = this.caculateData(this.data || []);
+      const { openIndizes, rows } = this.calculateData(this.data || []);
       this.expandedIndizes = openIndizes;
       this.calculatedData = rows;
       this.calculateSelection();
@@ -381,7 +406,7 @@ export class BaseGrid {
 
   set data(data: any[] | undefined) {
     this._data = data;
-    const { openIndizes, rows } = this.caculateData(this.data || []);
+    const { openIndizes, rows } = this.calculateData(this.data || []);
     this.expandedIndizes = openIndizes;
     this.calculatedData = rows;
     this.calculateSelection();
@@ -399,7 +424,7 @@ export class BaseGrid {
   public set options(value: GridOptions) {
     this._options = value;
 
-    const { openIndizes, rows } = this.caculateData(this.data || []);
+    const { openIndizes, rows } = this.calculateData(this.data || []);
     this.expandedIndizes = openIndizes;
     this.calculatedData = rows;
     this.calculateSelection();
@@ -412,7 +437,7 @@ export class BaseGrid {
   }
   public set expandedKeys(value: Record<string, boolean>) {
     this._expandedKeys = value;
-    const { openIndizes, rows } = this.caculateData(this.data || []);
+    const { openIndizes, rows } = this.calculateData(this.data || []);
     this.expandedIndizes = openIndizes;
     this.calculatedData = rows;
     this.calculateSelection();
@@ -433,13 +458,29 @@ export class BaseGrid {
         this._expandedKeys = expandedKeys;
       }
 
-      const { openIndizes, rows } = this.caculateData(filteredData);
+      const { openIndizes, rows } = this.calculateData(filteredData);
       this.expandedIndizes = openIndizes;
       this.calculatedData = rows;
       this.calculateSelection();
       this.onHeightChange(this.calculatedData.length * this.rowHeight);
       this.redraw();
     }
+  }
+
+  public get draggedRowIndex(): number | undefined {
+    return this._draggedRowIndex;
+  }
+  public set draggedRowIndex(value: number | undefined) {
+    this._draggedRowIndex = value;
+    this.redraw();
+  }
+
+  public get draggedRowInsertionIndex(): number | undefined {
+    return this._draggedRowInsertionIndex;
+  }
+  public set draggedRowInsertionIndex(value: number | undefined) {
+    this._draggedRowInsertionIndex = value;
+    this.redraw();
   }
 
   protected calculateColumnWidths(columns: ColumnConfig[]) {}

@@ -29,4 +29,5 @@ export const defaultOptions: GridOptions = {
     },
   },
   rowHeight: 32,
+  moveableRows: false,
 };

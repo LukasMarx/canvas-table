@@ -15,6 +15,7 @@ import Theming from '../../demos/Theming';
 import Tree from '../../demos/Tree';
 import ContextMenuDemo from 'apps/docs/demos/ContextMenu';
 import QueryDemo from 'apps/docs/demos/Query';
+import MoveableRows from 'apps/docs/demos/MoveableRows';
 
 export default function Doc({ meta, content, docs }) {
   const [mdxModule, setMdxModule] = useState<any>();
@@ -40,6 +41,7 @@ export default function Doc({ meta, content, docs }) {
             Tree: Tree,
             ContextMenuDemo: ContextMenuDemo,
             QueryDemo: QueryDemo,
+            MoveableRows: MoveableRows,
           }}
         />
       )}

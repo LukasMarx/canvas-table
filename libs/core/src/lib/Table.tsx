@@ -24,6 +24,7 @@ import groupArray from 'group-array';
 import debounce from 'lodash.debounce';
 import throttle from 'lodash.throttle';
 import { RowClickEvent } from './types/Events';
+import { useDragableRows } from './hooks/useDraggableRows';
 
 interface TableProps {
   data: any[];
@@ -375,6 +376,8 @@ export function Table(props: TableProps): ReactElement {
     [props.columns, props.onColumnsChange]
   );
 
+  const { handleMouseDown } = useDragableRows(gridRef, fakeScroll);
+
   return (
     <div
       style={{
@@ -405,7 +408,9 @@ export function Table(props: TableProps): ReactElement {
           position: 'relative',
         }}
         onClick={handleClick}
+        onMouseDown={handleMouseDown}
         onContextMenu={handleContextMenu}
+        onDragStart={(e) => e.preventDefault()}
       >
         <div
           style={{

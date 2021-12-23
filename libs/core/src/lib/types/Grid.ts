@@ -42,5 +42,6 @@ export interface GridOptions {
   };
   rowHeight?: number;
   groupBy?: string[];
+  moveableRows: boolean;
   scrollFramerate?: number;
 }
